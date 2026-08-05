@@ -1,0 +1,28 @@
+# build output & deps
+node_modules
+dist
+.astro
+.output
+
+# env
+.env
+.env.production
+.env.*.local
+
+# system
+.DS_Store
+*.log
+.claude
+
+# source / reference material (not part of the site)
+_extracted
+Ora Media.html
+Web.pdf
+Web_compressed.pdf
+Work copy.pdf
+Madani/
+*.pdf
+Untitled-*
+2345.png
+AlumniSansInlineOne-Regular.ttf
+Ora.svg

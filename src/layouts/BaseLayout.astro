@@ -1,0 +1,73 @@
+---
+import '../styles/global.css';
+interface Props { title?: string; description?: string; }
+const { title = 'Ora Digital Media', description = "Content, strategy and growth built as one system. Let's make something that actually moves." } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/MadaniArabic-Variable.woff2" crossorigin />
+    <link rel="preload" as="image" href="/images/astronaut.webp" fetchpriority="high" />
+  </head>
+  <body>
+    <div id="top" style="position:relative;width:100%;">
+      <!-- Continuous atmosphere backdrop -->
+      <div aria-hidden="true" class="bg-gradient"></div>
+      <div aria-hidden="true" class="bg-glows"></div>
+
+      <slot />
+    </div>
+
+    <style is:global>
+      /* Pure black base — always at the bottom of the stack */
+      .bg-gradient {
+        position: fixed; inset: 0; z-index: -3; pointer-events: none; overflow: hidden;
+        background: #050308;
+      }
+      /* Subtle purple → warm-red horizontal tint sitting on top of the black
+         base but under stars and content. */
+      .bg-gradient::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        pointer-events: none;
+        background: linear-gradient(90deg,
+          #4a2f8a 0%,
+          #5c3a99 18%,
+          #6b3e88 38%,
+          #8e4a5d 58%,
+          #a94a3a 78%,
+          #b04a2e 100%);
+        opacity: 0.12;
+      }
+      .bg-glows { display: none; }   /* removed — page background is pure black */
+    </style>
+
+    <script>
+      // Global scroll utilities + reveal-on-scroll
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        }
+      }, { threshold: 0.15 });
+      const observe = () => document.querySelectorAll('.reveal:not(.in)').forEach(el => io.observe(el));
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observe);
+      else observe();
+
+      // Smooth-scroll helper any element can use
+      (window as any).oraScrollTo = (id: string) => {
+        if (id === 'top') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        const el = document.getElementById(id);
+        if (!el) return;
+        const y = el.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      };
+    </script>
+  </body>
+</html>

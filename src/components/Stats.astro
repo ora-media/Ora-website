@@ -1,0 +1,213 @@
+---
+// Stats match the PDF: Brands +150 · Views +120M · Content Pieces +4500 · Shoots +400 · Campaigns +250
+const stats = [
+  { label: 'Brands', value: '+150' },
+  { label: 'Views', value: '+120M' },
+  { label: 'Content Pieces', value: '+4500' },
+  { label: 'Shoots', value: '+400' },
+  { label: 'Campaigns', value: '+250' },
+];
+// Duplicated 3× so the carousel can wrap smoothly.
+const loop = [...stats, ...stats, ...stats];
+
+const topLogos = ['Emirates Red Crescent', 'Sharjah Gov', 'Sharjah Co-op', 'Abu Dhabi TV', 'AIS Sharjah', 'GITEX Global'];
+const bottomLogos = ['Kana', 'Mahrosah', 'Yah Oud', 'Low Calories', 'Masar', 'Derma One', 'Bab Alkhozam'];
+---
+<section class="stats-section">
+  <div id="statsMarquee" class="stats-marquee">
+    <div class="stats-track">
+      {loop.map((s, i) => (
+        <div class="stat-item" data-key={i}>
+          <div class="stat-label">
+            <span class="stat-label-text">{s.label}</span>
+          </div>
+          <div class="stat-num">{s.value}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div class="logos">
+    <div class="logo-row">
+      <div class="logo-track logo-track-l">
+        {[...topLogos, ...topLogos].map(l => (<div class="logo-slot">{l}</div>))}
+      </div>
+    </div>
+    <div class="logo-row">
+      <div class="logo-track logo-track-r">
+        {[...bottomLogos, ...bottomLogos].map(l => (<div class="logo-slot">{l}</div>))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .stats-section {
+    position: relative; z-index: 1;
+    padding: 0 0 90px;
+    margin-top: -140px;        /* pulls the slider well up into Who We Are's tail */
+  }
+
+  /* Wider viewport for the slider so more of the neighbouring stats stay visible;
+     the curved (elliptical) mask still shapes the fade at both ends. */
+  .stats-marquee {
+    overflow-x: hidden;
+    overflow-y: visible;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 40px 0 60px;
+    -webkit-mask-image:
+      radial-gradient(ellipse 60% 100% at 50% 50%, #000 60%, rgba(0,0,0,0.7) 82%, transparent 100%);
+    mask-image:
+      radial-gradient(ellipse 60% 100% at 50% 50%, #000 60%, rgba(0,0,0,0.7) 82%, transparent 100%);
+  }
+  .stats-track {
+    display: flex; width: max-content; align-items: center; gap: 40px;
+    will-change: transform;
+  }
+  /* Each item is a flex column so label sits directly above number with a
+     fixed, natural gap. Scaling changes the visual size cleanly without
+     shifting any of the layout. */
+  .stat-item {
+    flex: 0 0 auto;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transform: scale(0.7);
+    transform-origin: 50% 50%;
+    transition: transform .55s cubic-bezier(.34,1.25,.5,1);
+    will-change: transform;
+  }
+  .stat-item.is-active {
+    transform: scale(1.35);
+  }
+
+  /* Label — natural size, tight to the number underneath. Colour is the only
+     independent state change; sizing is handled by the parent item. */
+  .stat-label {
+    display: block;
+    font-family: 'Madani', sans-serif;
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1;
+    color: #6a635c;
+    transition: color .4s ease;
+    white-space: nowrap;
+  }
+  .stat-label-text { display: inline-block; }
+  .stat-num {
+    font-family: 'Alumni', sans-serif;
+    font-size: 80px;
+    line-height: 1;
+    background: linear-gradient(180deg,#f0955a,#8a3d1f);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    transition: background-image .4s, filter .4s ease;
+    white-space: nowrap;
+  }
+  .stat-item.is-active .stat-label { color: #efe7de; }
+  .stat-item.is-active .stat-num {
+    background-image: linear-gradient(180deg,#ffb066,#c25a26);
+    filter: drop-shadow(0 3px 14px rgba(255,110,40,0.22));
+  }
+
+  .logos { margin: 70px 0 0; display: flex; flex-direction: column; gap: 14px; }
+  .logo-row {
+    overflow: hidden; padding: 16px 0;
+    background: linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02));
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(0,0,0,0.28);
+    backdrop-filter: blur(2px);
+  }
+  .logo-track {
+    display: flex; width: max-content; align-items: center;
+  }
+  .logo-track-l { animation: marqueeL 42s linear infinite; }
+  .logo-track-r { animation: marqueeR 42s linear infinite; }
+  .logo-slot {
+    flex: 0 0 auto; width: 200px; height: 44px; padding: 0 40px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: .82;
+    font-family: 'Madani'; font-weight: 600; font-size: 15px;
+    color: #cfc7be; letter-spacing: .3px;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 700px) {
+    .stat-item { width: 200px; }
+    .stat-num { font-size: 68px; }
+  }
+</style>
+
+<script>
+  // Auto-advance carousel: one step every 2.6s, center the current stat.
+  // Timer only starts once the marquee enters the viewport, so scrolling to
+  // this section gets an immediate first advance instead of waiting on the
+  // interval that was ticking off-screen.
+  const sm = document.getElementById('statsMarquee') as HTMLElement | null;
+  const track = sm?.querySelector<HTMLElement>('.stats-track');
+  if (sm && track) {
+    const EASE = 'transform 1.1s cubic-bezier(.45,.05,.2,1)';
+    const items = () => Array.from(track.querySelectorAll<HTMLElement>('.stat-item'));
+    let base = Math.max(1, Math.round(items().length / 3));
+    let c = 0;
+    let hovered = false;
+
+    sm.addEventListener('mouseenter', () => { hovered = true; });
+    sm.addEventListener('mouseleave', () => { hovered = false; });
+
+    const pos = (i: number, animate: boolean) => {
+      const list = items();
+      const el = list[i]; if (!el) return;
+      track.style.transition = animate ? EASE : 'none';
+      const x = sm.offsetWidth / 2 - (el.offsetLeft + el.offsetWidth / 2);
+      track.style.transform = `translateX(${x.toFixed(2)}px)`;
+      if (!animate) void track.offsetWidth;
+      list.forEach((n, k) => n.classList.toggle('is-active', k === i));
+      // (No inline transforms — the .is-active class rule in the stylesheet
+      // handles both the number scale and the label scale.)
+    };
+
+    const boot = () => {
+      base = Math.max(1, Math.round(items().length / 3));
+      c = 0;
+      pos(base, false);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(boot));
+
+    const step = () => {
+      if (hovered) return;
+      c += 1;
+      const target = base + (c % base);
+      if (c % base === 0) {
+        pos(base - 1, false);
+        requestAnimationFrame(() => pos(target, true));
+      } else {
+        pos(target, true);
+      }
+    };
+
+    let timer: number | null = null;
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      // First advance ~600ms after entering view so the user actually sees the
+      // motion instead of arriving to a static row.
+      window.setTimeout(step, 600);
+      timer = window.setInterval(step, 2600);
+    };
+
+    // Only start once the marquee is actually on screen.
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { start(); io.disconnect(); return; }
+      }
+    }, { threshold: 0.25 });
+    io.observe(sm);
+
+    window.addEventListener('resize', () => pos(base + (c % base), false));
+    window.addEventListener('beforeunload', () => { if (timer) window.clearInterval(timer); });
+  }
+</script>

@@ -1,0 +1,74 @@
+---
+// The showcase image slot on the right side (iPad-in-hands mockup in the PDF).
+// A real photo can be dropped into /public/images/who-showcase.webp later;
+// until then we render an on-brand placeholder that matches the PDF's dark tone.
+---
+<section id="who" class="who">
+  <div class="container who-grid">
+    <div class="reveal who-text">
+      <h2 class="who-title">Who We Are</h2>
+      <div class="who-body">
+        <p>Ora is a creative and strategy-driven team.</p>
+        <p>We work with brands that are done with random content and want something that actually makes sense.</p>
+        <p>Sometimes that means building from scratch.<br />Sometimes it means fixing what's already there.</p>
+        <p>We've worked with brands across industries building content that doesn't just look good, but performs.</p>
+      </div>
+    </div>
+    <div class="reveal who-showcase">
+      <img src="/images/who-showcase.webp" alt="The epicenter of digital evolution" loading="lazy" width="1920" height="1080" decoding="async" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .who {
+    position: relative; z-index: 1;
+    padding: 130px 0;
+    background: transparent;
+  }
+  .who-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.7fr;      /* image column dominates the row */
+    gap: 40px;
+    align-items: center;
+  }
+  .who-title {
+    font-family: 'Madani'; font-weight: 900;
+    font-size: clamp(44px, 5vw, 78px);
+    letter-spacing: -2px; margin: 0 0 34px;
+    color: #F3EDE4;
+  }
+  .who-body {
+    font-family: 'Madani'; font-weight: 400;
+    font-size: clamp(17px, 1.35vw, 22px);
+    line-height: 1.85; color: #c3bbb2;
+  }
+  .who-body p { margin: 0 0 8px; }
+  .who-body p:last-child { margin: 0; }
+
+  /* Tablet extends well past the column edges — bleeds toward the viewport
+     edge on both sides so it reads much larger than the container alone. */
+  .who-showcase {
+    position: relative;
+    margin-right: -22%;
+    margin-left: -4%;
+  }
+  .who-showcase img {
+    display: block;
+    width: 128%;
+    max-width: none;
+    height: auto;
+    border-radius: 20px;
+    filter: drop-shadow(0 50px 90px rgba(0,0,0,0.65));
+  }
+  @media (max-width: 1100px) {
+    .who-showcase { margin-right: 0; margin-left: 0; }
+    .who-showcase img { width: 100%; }
+  }
+
+  @media (max-width: 900px) {
+    .who { padding: 80px 0; }
+    .who-grid { grid-template-columns: 1fr; gap: 44px; }
+    .who-title { margin-bottom: 22px; }
+  }
+</style>

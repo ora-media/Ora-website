@@ -1,0 +1,126 @@
+---
+---
+<div class="ora-modal" data-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Contact Ora">
+  <div class="ora-modal-panel" data-modal-panel>
+    <div class="ora-modal-head">
+      <h3>Let's talk</h3>
+      <button class="ora-modal-x" aria-label="Close" data-modal-close>×</button>
+    </div>
+    <div class="ora-modal-body" data-modal-body>
+      <p class="ora-modal-lead">Tell us a little about your brand and what you're trying to move.</p>
+      <form data-contact-form>
+        <input name="name" required placeholder="Your name" />
+        <input name="email" type="email" required placeholder="Email" />
+        <input name="brand" placeholder="Brand / company" />
+        <textarea name="message" rows="3" placeholder="What are you trying to grow?"></textarea>
+        <button type="submit" class="ora-submit">Send message</button>
+      </form>
+    </div>
+    <div class="ora-modal-sent" data-modal-sent hidden>
+      <p>Thanks — we'll be in touch shortly. ✦</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ora-modal {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: rgba(4,3,2,0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeUp .3s ease both;
+  }
+  .ora-modal[hidden] { display: none; }
+  .ora-modal-panel {
+    width: 100%; max-width: 520px; padding: 44px;
+    border-radius: 24px;
+    background: radial-gradient(120% 100% at 0% 0%, rgba(223,84,53,0.14), transparent 55%), linear-gradient(180deg,#161311,#0c0a08);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+  }
+  .ora-modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .ora-modal-head h3 {
+    font-family: 'Madani'; font-weight: 900; font-size: 34px;
+    margin: 0; color: #F3EDE4; letter-spacing: -1px;
+  }
+  .ora-modal-x {
+    background: transparent; border: 0; color: #8a827a;
+    font-size: 26px; cursor: pointer; line-height: 1;
+  }
+  .ora-modal-lead {
+    font-family: 'Madani'; font-weight: 400; font-size: 16px;
+    color: #a89f96; margin: 0 0 26px;
+  }
+  .ora-modal-body form {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .ora-modal-body input, .ora-modal-body textarea {
+    font-family: 'Madani'; font-size: 16px; color: #F3EDE4;
+    padding: 14px 18px; border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    outline: none;
+  }
+  .ora-modal-body textarea { resize: vertical; }
+  .ora-modal-body input:focus, .ora-modal-body textarea:focus {
+    border-color: rgba(255,140,60,0.6);
+  }
+  .ora-submit {
+    margin-top: 6px;
+    font-family: 'Madani'; font-weight: 700; font-size: 17px;
+    padding: 15px; color: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(255,170,90,0.4);
+    background: linear-gradient(180deg,#df5435,#8a3418);
+    box-shadow: 0 8px 26px rgba(200,70,20,0.4);
+    cursor: pointer; transition: filter .2s;
+  }
+  .ora-submit:hover { filter: brightness(1.12); }
+  .ora-modal-sent p {
+    font-family: 'Madani'; font-weight: 500; font-size: 18px;
+    color: #df5435; margin: 20px 0 0;
+  }
+</style>
+
+<script>
+  const modal = document.querySelector<HTMLElement>('[data-modal]');
+  const panel = document.querySelector<HTMLElement>('[data-modal-panel]');
+  const body = document.querySelector<HTMLElement>('[data-modal-body]');
+  const sent = document.querySelector<HTMLElement>('[data-modal-sent]');
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+
+  const open = () => {
+    if (!modal) return;
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    (modal.querySelector<HTMLInputElement>('input')) ?.focus();
+  };
+  const close = () => {
+    if (!modal) return;
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-open-modal]').forEach(el =>
+    el.addEventListener('click', open)
+  );
+  document.querySelectorAll<HTMLElement>('[data-modal-close]').forEach(el =>
+    el.addEventListener('click', close)
+  );
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+  panel?.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.hidden) close();
+  });
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (body && sent) { body.hidden = true; sent.hidden = false; }
+  });
+</script>

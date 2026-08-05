@@ -1,0 +1,196 @@
+---
+// 18 tiles in a 6-col grid, aspect 3/4, with the mouse acting as a flashlight
+// cutting through the dark vignette that covers the grid. Real photos are
+// pulled from /images/work/ so the section reads like a portfolio wall.
+
+// Curated image order — food up top, product/lifestyle in the middle, and a
+// darker row of Mahrousah social media designs at the bottom, matching the
+// reference's descending-brightness feel.
+const tiles = [
+  // Row 1 — food photography (6)
+  'photo-1.jpg',  'photo-2.jpg',  'photo-3.jpg',
+  'photo-4.jpg',  'photo-5.jpg',  'photo-6.jpg',
+  // Row 2 — food photography + drink shots (6)
+  'photo-7.jpg',  'photo-8.jpg',  'photo-9.jpg',
+  'photo-10.jpg', 'social-1.jpg', 'social-2.jpg',
+  // Row 3 — Mahrousah social media designs (6)
+  'social-3.jpg', 'social-4.jpg', 'social-5.jpg',
+  'social-6.jpg', 'social-7.jpg', 'social-8.jpg',
+].map((file, i) => ({ id: `work-${i+1}`, src: `/images/work/${file}` }));
+---
+<section id="work" class="work">
+  <div class="work-inner">
+    <!-- Watermark title above the grid — each word styled independently
+         to give the "Not" prominence, "Just" a smaller/distant feel, and
+         "Content" a subtle left-tilt. -->
+    <h2 class="work-title" aria-label="Not Just Content">
+      <span class="wt-not">Not</span>
+      <span class="wt-just">Just</span>
+      <span class="wt-content">Content</span>
+    </h2>
+
+    <div class="work-grid">
+      {tiles.map(t => (
+        <div class="work-tile" data-id={t.id}>
+          <img src={t.src} alt="" loading="lazy" />
+        </div>
+      ))}
+    </div>
+    <div aria-hidden="true" class="work-vignette"></div>
+  </div>
+
+  <div class="work-flash" aria-hidden="true"></div>
+</section>
+
+<style>
+  .work {
+    position: relative; z-index: 1;
+    padding: 130px 0 140px;
+    overflow: hidden;
+    background: transparent;             /* lets the site's gradient show through */
+  }
+
+  /* Watermark title — each word gets its own scale, opacity, and blur so
+     the phrase reads as an out-of-focus tagline hovering above the grid.
+     "Not" dominates, "Just" recedes, "Content" tilts slightly to the left. */
+  .work-title {
+    font-family: 'Madani', sans-serif;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -2px;
+    margin: 0 0 40px;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: clamp(10px, 2vw, 30px);
+    font-size: clamp(40px, 6vw, 88px);
+    /* fallback colour for browsers that ignore per-span overrides */
+    color: rgba(240, 220, 200, 0.14);
+  }
+  /* Blur applied on the parent so every word gets the SAME out-of-focus weight. */
+  .work-title { filter: blur(1.5px); }
+  .work-title span { display: inline-block; }
+  .wt-not {
+    font-size: 1.25em;
+    color: rgba(240, 220, 200, 0.18);
+    letter-spacing: -3px;
+  }
+  .wt-just {
+    font-size: 0.5em;
+    color: rgba(240, 220, 200, 0.11);
+    letter-spacing: 0;
+    transform: translateY(-6%);      /* nudge up so it aligns with cap-height */
+  }
+  .wt-content {
+    font-size: 1.1em;
+    color: rgba(240, 220, 200, 0.16);
+    letter-spacing: -2px;
+    /* 3D perspective tilt — the right edge recedes into the page (leans
+       "inwards" rather than tilting downwards on a flat 2D axis). */
+    transform: perspective(600px) rotateY(-28deg);
+    transform-origin: center;
+  }
+
+  .work-inner {
+    position: relative;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 44px;
+    z-index: 1;
+  }
+  .work-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+  }
+  .work-tile {
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  .work-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    /* Dim the images so the whole grid reads like the reference — dark
+       portfolio wall with the flashlight cursor exposing the details. */
+    filter: brightness(0.72) saturate(0.85);
+    transition: filter .35s ease, transform .5s ease;
+  }
+  .work-tile:hover img {
+    filter: brightness(1) saturate(1);
+    transform: scale(1.03);
+  }
+
+  /* Soft vignette around the grid — pure black tones, no colour tint. */
+  .work-vignette {
+    position: absolute;
+    inset: -40px;
+    pointer-events: none;
+    background: radial-gradient(ellipse 78% 70% at 50% 50%,
+      transparent 40%,
+      rgba(0,0,0,0.5) 78%,
+      rgba(0,0,0,0.8) 100%);
+    z-index: 2;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+  }
+
+  /* Flashlight — a bright hole in a black scrim that follows the cursor. */
+  .work-flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    background: radial-gradient(circle 460px at var(--fx, 50%) var(--fy, 50%),
+      rgba(0,0,0,0)    0%,
+      rgba(0,0,0,0.25) 45%,
+      rgba(0,0,0,0.60) 82%,
+      rgba(0,0,0,0.80) 100%);
+    -webkit-mask-image:
+      linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent),
+      linear-gradient(90deg,  transparent, #000 6%,  #000 94%, transparent);
+    mask-image:
+      linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent),
+      linear-gradient(90deg,  transparent, #000 6%,  #000 94%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    transition: opacity .3s ease;
+  }
+
+  @media (max-width: 900px) {
+    .work-inner { padding: 0 20px; }
+    .work-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .work-title { font-size: clamp(28px, 8vw, 44px); letter-spacing: -1px; margin-bottom: 24px; }
+    /* Flashlight is a desktop-only affordance */
+    .work-flash { display: none; }
+    .work-tile img { filter: brightness(0.9) saturate(0.95); }
+  }
+</style>
+
+<script>
+  const work = document.getElementById('work');
+  const flash = work?.querySelector<HTMLElement>('.work-flash');
+  if (work && flash) {
+    // Fade the flashlight scrim in only when the cursor is over the section.
+    // When the cursor leaves, the plain vignette takes over so nothing looks
+    // "stuck" bright in one spot.
+    let over = false;
+    work.addEventListener('mouseenter', () => { over = true; flash.style.opacity = '1'; });
+    work.addEventListener('mouseleave', () => { over = false; flash.style.opacity = '0'; });
+    flash.style.opacity = '0';
+    work.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!over) return;
+      const r = work.getBoundingClientRect();
+      flash.style.setProperty('--fx', `${e.clientX - r.left}px`);
+      flash.style.setProperty('--fy', `${e.clientY - r.top}px`);
+    }, { passive: true });
+  }
+</script>

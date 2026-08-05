@@ -1,0 +1,403 @@
+---
+// How We Work — snake path + 4 progressive-lighting stops that match the
+// reference exactly. Everything (path, dots, text) shares the SAME 1000×1250
+// coordinate space so nothing can drift. Pixel-based left/top positioning is
+// used (not CSS custom properties) so the layout is guaranteed to work.
+
+const STAGE_W = 1000;
+const STAGE_H = 1250;
+
+// Ball positions in the 1000×1250 coordinate space. `textSide` decides which
+// side of the ball the label appears on. `threshold` is 0…1 progress along
+// the path (0 = start, 1 = end) at which this stop should light up.
+// textSide describes where the LABEL sits relative to the ball:
+//   'right' → ball on the left, label to the right of it
+//   'left'  → ball on the right, label to the left of it (right-aligned)
+const stops = [
+  { title: 'Understand', desc: 'We take time to understand the\nbrand, not just the brief',
+    x: 780, y: 340, textSide: 'right', threshold: 0.24 },
+  { title: 'Plan',       desc: 'We put structure behind the\ncontent',
+    x: 220, y: 610, textSide: 'right', threshold: 0.50 },
+  { title: 'Create',     desc: 'We produce content that\nactually represents the brand',
+    x: 780, y: 880, textSide: 'right', threshold: 0.76 },
+  // Improve: ball sits to the RIGHT of the "Improve" text — line curves in from
+  // upper-right and terminates at this ball (no downward continuation).
+  { title: 'Improve',    desc: 'We adjust, test, and build on\nwhat works',
+    x: 460, y: 1140, textSide: 'left',  threshold: 0.98 },
+];
+
+// Snake path — starts INSIDE the sun (hidden behind it by z-index), snakes
+// right → left → right, then curves down-left to TERMINATE AT the Improve
+// ball at (460, 1140). No trailing segment below.
+const SNAKE_D = `M 540 -60
+                 C 540 160, 780 200, 780 340
+                 C 780 470, 220 480, 220 610
+                 C 220 740, 780 750, 780 880
+                 C 780 1010, 460 1010, 460 1140`;
+---
+<section id="process" class="hw">
+  <!-- Header: sun + title + subtitle grouped in an inline-block so subtitle
+       aligns to the title's left edge, not the page edge. -->
+  <div class="hw-head">
+    <div class="hw-group">
+      <div class="hw-title-wrap">
+        <div class="hw-sun-halo" aria-hidden="true"></div>
+        <div class="hw-sun" aria-hidden="true"></div>
+        <h2 class="hw-title">How We Work</h2>
+      </div>
+      <p class="hw-sub">The process</p>
+    </div>
+  </div>
+
+  <!-- Stage: fixed aspect ratio, all coordinates map 1:1 with the SVG viewBox -->
+  <div class="hw-stage" data-hw-stage>
+    <svg
+      class="hw-svg"
+      viewBox={`0 0 ${STAGE_W} ${STAGE_H}`}
+      preserveAspectRatio="xMidYMin meet"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="hwLineGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0"   stop-color="#ffcf85" />
+          <stop offset="0.5" stop-color="#ff8a3a" />
+          <stop offset="1"   stop-color="#df5435" />
+        </linearGradient>
+        <filter id="hwLineGlow" x="-30%" y="-10%" width="160%" height="120%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+        <filter id="hwBallGlow" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur stdDeviation="10" />
+        </filter>
+      </defs>
+
+      <!-- Dim base line (guide, always visible) -->
+      <path
+        d={SNAKE_D}
+        fill="none"
+        stroke="rgba(255,140,60,0.12)"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <!-- Lit line under-glow -->
+      <path
+        data-hw-line-glow
+        d={SNAKE_D}
+        fill="none"
+        stroke="url(#hwLineGrad)"
+        stroke-width="10"
+        stroke-linecap="round"
+        opacity="0.35"
+        filter="url(#hwLineGlow)"
+        style="stroke-dasharray:3000;stroke-dashoffset:3000;"
+      />
+      <!-- Lit line — crisp bright stroke on top -->
+      <path
+        data-hw-line
+        d={SNAKE_D}
+        fill="none"
+        stroke="url(#hwLineGrad)"
+        stroke-width="2.6"
+        stroke-linecap="round"
+        style="stroke-dasharray:3000;stroke-dashoffset:3000;"
+      />
+
+      <!-- Balls: flat 2D solid orange discs. The blur halo behind fades in
+           on lit; the disc itself never changes. -->
+      {stops.map((s) => (
+        <g class="hw-ball-group" data-hw-ball data-threshold={s.threshold}>
+          <!-- Blurred halo — invisible until lit -->
+          <circle class="hw-ball-halo" cx={s.x} cy={s.y} r="18" fill="#ff8a3a" filter="url(#hwBallGlow)" opacity="0" />
+          <!-- Flat disc (constant) -->
+          <circle class="hw-ball-core" cx={s.x} cy={s.y} r="8" fill="#ff8a3a" />
+        </g>
+      ))}
+    </svg>
+
+    <!-- Step labels as HTML overlaid on the SVG using the SAME coord system.
+         Positioning uses % of stage so it responds to stage scaling. -->
+    {stops.map((s) => {
+      const leftPct = (s.x / STAGE_W) * 100;
+      const topPct  = (s.y / STAGE_H) * 100;
+      return (
+        <div
+          class={`hw-stop hw-stop-${s.textSide}`}
+          data-hw-stop
+          data-threshold={s.threshold}
+          style={`left:${leftPct}%;top:${topPct}%;`}
+        >
+          <h3 class="hw-stop-title">{s.title}</h3>
+          <p class="hw-stop-desc">
+            {s.desc.split('\n').map((line, i, arr) => (
+              <>{line}{i < arr.length - 1 && <br />}</>
+            ))}
+          </p>
+        </div>
+      );
+    })}
+
+    <!-- Bottom-right outro tagline -->
+    <div class="hw-outro">
+      <p>It's not complicated.</p>
+      <p>It's just not random.</p>
+      <p>Once the direction is clear, this is how we build.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hw {
+    position: relative; z-index: 1;
+    padding: 130px 0 120px;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  /* ── Header ───────────────────────────────────────────── */
+  .hw-head {
+    position: relative;
+    z-index: 3;                            /* above stage — sun visually covers line */
+    padding: 60px 44px 0;
+    text-align: center;
+  }
+  /* Group: inline-block so subtitle can align with the title's LEFT edge
+     instead of the page edge. */
+  .hw-group {
+    display: inline-block;
+    text-align: left;                      /* subtitle inherits left-align */
+    position: relative;
+  }
+  .hw-title-wrap {
+    position: relative;
+    display: inline-block;
+  }
+  /* Flat orange disc — sized to be roughly 1.5× the cap-height of the title,
+     which puts it right in the "e W" span of "How We Work" per the reference.
+     Nudged slightly right of centre to sit under the "We" like in the design. */
+  .hw-sun {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(calc(-50% + 20px), calc(-50% + 4px));
+    width: clamp(180px, 16vw, 240px);
+    height: clamp(180px, 16vw, 240px);
+    border-radius: 50%;
+    background: #ff8a3a;
+    box-shadow:
+      0 0 60px 12px rgba(255,140,60,0.30),
+      0 0 180px 60px rgba(255,120,60,0.12);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hw-sun-halo {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(calc(-50% + 20px), calc(-50% + 4px));
+    width: clamp(320px, 30vw, 460px);
+    height: clamp(320px, 30vw, 460px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(255,150,70,0.14), rgba(255,150,70,0.05) 45%, transparent 70%);
+    filter: blur(12px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hw-title {
+    position: relative; z-index: 2;
+    /* Alumni Sans Inline One — retro striped display face */
+    font-family: 'Alumni', 'Madani', sans-serif !important;
+    font-weight: 400;
+    font-size: clamp(64px, 7.4vw, 132px);
+    line-height: 1;
+    letter-spacing: 2px;
+    margin: 0;
+    color: #ffffff;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.6), 0 0 24px rgba(0,0,0,0.4);
+  }
+  /* Subtitle: sits BELOW the title, aligned with the title's LEFT edge (via
+     the inline-block .hw-group wrapper). Small left indent so it doesn't hug
+     the very first letter of "How". */
+  .hw-sub {
+    position: relative; z-index: 2;
+    font-family: 'Madani', sans-serif;
+    font-weight: 400;
+    font-size: clamp(16px, 1.35vw, 22px);
+    color: #d8cec3;
+    margin: 14px 0 0 6px;
+    text-align: left;
+    letter-spacing: 0.3px;
+  }
+
+  /* Stage matches SVG viewBox 1:1. Sits BELOW the header stacking-wise, so the
+     sun's solid orange disc naturally covers the top of the line where they
+     overlap — no mask needed. */
+  .hw-stage {
+    position: relative;
+    width: 100%;
+    max-width: 1000px;
+    aspect-ratio: 1000 / 1250;
+    margin: -60px auto 0;                  /* overlap the header */
+    z-index: 1;
+  }
+  .hw-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  /* Line reveal — updated from JS. Base dash length is set once total is known. */
+  [data-hw-line], [data-hw-line-glow] {
+    transition: stroke-dashoffset .12s linear;
+  }
+
+  /* Flat 2D discs — never change fill, size, or drop-shadow. Only the blurred
+     halo behind them fades in when the ball is lit. */
+  .hw-ball-halo { transition: opacity .5s ease; }
+  .hw-ball-group.is-lit .hw-ball-halo { opacity: 0.9; }
+
+  /* ── Step labels — positioned relative to the SVG-coordinate stage ── */
+  .hw-stop {
+    position: absolute;
+    max-width: 320px;
+    pointer-events: none;
+    z-index: 2;
+    /* transform lifts the text off the ball centre so it sits alongside */
+  }
+  /* Label placement relative to the ball:
+     - hw-stop-right → label starts 28px to the RIGHT of the ball (left-aligned)
+     - hw-stop-left  → label ends 28px to the LEFT of the ball (right-aligned) */
+  .hw-stop-right {
+    transform: translate(28px, -50%);
+    text-align: left;
+  }
+  .hw-stop-left {
+    transform: translate(calc(-100% - 28px), -50%);
+    text-align: right;
+  }
+  .hw-stop-left .hw-stop-desc { margin-left: auto; }
+
+  .hw-stop-title {
+    font-family: 'Alumni', 'Madani', sans-serif !important;
+    font-weight: 400;
+    font-size: clamp(38px, 4.4vw, 66px);
+    line-height: 1;
+    letter-spacing: 1px;
+    margin: 0 0 12px;
+    color: rgba(255,255,255,0.35);              /* dim white */
+    text-shadow: 0 2px 18px rgba(0,0,0,0.55);
+    transition: color .45s ease, text-shadow .55s ease;
+    white-space: nowrap;
+  }
+  .hw-stop.is-lit .hw-stop-title {
+    color: #ffffff;                              /* solid white when lit */
+    text-shadow:
+      0 0 24px rgba(255,140,60,0.55),
+      0 2px 18px rgba(0,0,0,0.55);
+  }
+  .hw-stop-desc {
+    font-family: 'Madani', sans-serif;
+    font-weight: 400;
+    font-size: clamp(13px, 1vw, 15px);
+    line-height: 1.55;
+    color: #a49a90;
+    margin: 0;
+    max-width: 260px;
+    transition: color .35s ease;
+  }
+  .hw-stop.is-lit .hw-stop-desc { color: #c9c0b6; }
+
+  /* ── Outro tagline ────────────────────────────────────── */
+  .hw-outro {
+    position: absolute;
+    right: 30px;
+    bottom: 20px;
+    max-width: 340px;
+    text-align: right;
+    font-family: 'Madani', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: #7a635a;
+    line-height: 1.6;
+  }
+  .hw-outro p { margin: 0 0 4px; }
+  .hw-outro p:last-child { color: #b06a3a; margin-top: 10px; }
+
+  /* ── Mobile — collapse to a stacked list ───────────────── */
+  @media (max-width: 780px) {
+    .hw { padding: 90px 0 60px; }
+    .hw-stage { aspect-ratio: auto; height: auto; padding: 20px 22px 40px; max-width: 100%; }
+    .hw-svg { display: none; }
+    .hw-stop {
+      position: relative; left: 0 !important; top: 0 !important;
+      transform: none;
+      margin-bottom: 44px;
+      max-width: 100%;
+    }
+    .hw-stop-title { color: #ff9d55; white-space: normal; font-size: 42px; }
+    .hw-stop-desc { color: #c9c0b6; }
+    .hw-outro { position: static; text-align: left; margin-top: 20px; }
+  }
+</style>
+
+<script>
+  // Progressive path draw + per-ball lighting driven by scroll position within
+  // the section. Uses SVG stroke-dashoffset for the line, and a CSS class flip
+  // for each ball/label pair when its threshold (0..1) is passed.
+  const stage = document.querySelector<HTMLElement>('[data-hw-stage]');
+  const line  = document.querySelector<SVGPathElement>('[data-hw-line]');
+  const glow  = document.querySelector<SVGPathElement>('[data-hw-line-glow]');
+  const stops = Array.from(document.querySelectorAll<HTMLElement>('[data-hw-stop]'));
+  const balls = Array.from(document.querySelectorAll<SVGGElement>('[data-hw-ball]'));
+
+  if (stage && line) {
+    let total = 0;
+    const initLength = () => {
+      total = line.getTotalLength();
+      const dash = String(total);
+      line.style.strokeDasharray = dash;
+      line.style.strokeDashoffset = dash;
+      if (glow) {
+        glow.style.strokeDasharray = dash;
+        glow.style.strokeDashoffset = dash;
+      }
+    };
+    initLength();
+    window.addEventListener('load', () => { initLength(); update(); });
+    window.addEventListener('resize', () => { initLength(); update(); });
+
+    const clamp01 = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
+
+    const update = () => {
+      const r = stage.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      // Draw starts when stage top reaches ~75% down the viewport; completes
+      // when stage bottom reaches ~35% down. Roughly one screen of scroll.
+      const startTop = vh * 0.75;
+      const endBot   = vh * 0.35;
+      const denom    = (startTop - endBot) + r.height;
+      const raw      = (startTop - r.top) / denom;
+      const p        = clamp01(raw);
+      const off      = String(total * (1 - p));
+      line.style.strokeDashoffset = off;
+      if (glow) glow.style.strokeDashoffset = off;
+      // toggle each stop + ball
+      for (const stop of stops) {
+        const t = parseFloat(stop.dataset.threshold || '1');
+        stop.classList.toggle('is-lit', p >= t);
+      }
+      for (const ball of balls) {
+        const t = parseFloat(ball.dataset.threshold || '1');
+        ball.classList.toggle('is-lit', p >= t);
+      }
+    };
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { ticking = false; update(); });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+  }
+</script>

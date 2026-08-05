@@ -1,0 +1,203 @@
+---
+import OraLogo from './OraLogo.astro';
+// Some items scroll to a section on the home page ("scroll"); others navigate
+// to a dedicated page ("href"). Labels/order stay identical either way.
+const items = [
+  { id: 'who',     label: 'Who We Are',   type: 'scroll' as const },
+  { id: 'problem', label: 'The Problem',  type: 'scroll' as const },
+  { id: 'do',      label: 'What We Do',   type: 'scroll' as const },
+  { id: 'work',    label: 'Work',         type: 'href'   as const, href: '/work' },
+  { id: 'about',   label: 'About',        type: 'scroll' as const },
+];
+const currentPath = Astro.url.pathname;
+---
+<nav class="site-nav no-print">
+  <a class="nav-logo" href="/" aria-label="Ora — home"><OraLogo height={44} /></a>
+
+  <div class="nav-links">
+    {items.map(it => (
+      it.type === 'href'
+        ? <a
+            class={`pill-btn ${currentPath === it.href ? 'is-active' : ''}`}
+            data-nav-link={it.id}
+            href={it.href}
+          >{it.label}</a>
+        : <button
+            class="pill-btn"
+            data-nav-link={it.id}
+            data-scroll={it.id}
+            data-scroll-home
+          >{it.label}</button>
+    ))}
+  </div>
+
+  <button class="cta-btn" data-open-modal>Get Started</button>
+
+  <!-- Mobile toggle -->
+  <button class="nav-burger" aria-label="Open menu" data-burger>
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<style>
+  .site-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+    background: linear-gradient(180deg,rgba(10,6,12,0.86) 0%,rgba(10,6,12,0.6) 55%,rgba(10,6,12,0) 100%);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 44px;
+    /* Load fade: opacity-only so the transform stays free for scroll hide/show. */
+    opacity: 0;
+    transform: translateY(0);
+    transition: opacity .5s ease .05s, transform .35s cubic-bezier(.2,.7,.2,1);
+    will-change: transform;
+  }
+  .site-nav.is-ready { opacity: 1; }
+  /* Hides the nav when scrolling DOWN. Reappears on scroll UP. */
+  .site-nav.is-hidden { transform: translateY(-110%); }
+  .nav-logo { display: flex; align-items: center; background: transparent; border: 0; cursor: pointer; padding: 0; text-decoration: none; }
+  .nav-links { display: flex; align-items: center; gap: 10px; }
+
+  /* Nav pill-links start clean — plain text only. On :hover or when the pill
+     is the active-section link, the SAME glass artwork used by .cta-btn
+     (btn-glass.png) fades in behind the label. */
+  .site-nav :global(.pill-btn) {
+    position: relative;
+    isolation: isolate;
+    color: rgba(213, 205, 196, 0.9);
+    background: transparent;
+    border: 0;
+    padding: 11px 26px;
+    transition: color .18s ease, transform .28s ease;
+  }
+  .site-nav :global(.pill-btn)::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: url('/images/btn-glass.png') center / 100% 100% no-repeat;
+    opacity: 0;
+    transition: opacity .28s ease;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .site-nav :global(.pill-btn:hover) {
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+  .site-nav :global(.pill-btn:hover)::before { opacity: 1; }
+
+  .site-nav :global(.pill-btn.is-active) {
+    color: #ffffff;
+    transform: none;
+  }
+  .site-nav :global(.pill-btn.is-active)::before { opacity: 1; }
+
+  .site-nav :global(.pill-btn:active) { transform: translateY(0) scale(0.985); }
+  .nav-burger { display: none; flex-direction: column; gap: 5px; background: transparent; border: 0; cursor: pointer; padding: 8px; }
+  .nav-burger span { display: block; width: 26px; height: 2px; background: #F3EDE4; border-radius: 2px; transition: transform .3s, opacity .3s; }
+  .nav-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-burger.is-open span:nth-child(2) { opacity: 0; }
+  .nav-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  @media (max-width: 980px) {
+    .site-nav { padding: 16px 20px; }
+    .nav-links {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: rgba(10,6,12,0.96);
+      backdrop-filter: blur(12px);
+      flex-direction: column; align-items: stretch; gap: 4px;
+      padding: 14px 20px 24px;
+      transform: translateY(-8px); opacity: 0; pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-links.is-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .nav-links .pill-btn { width: 100%; text-align: left; padding: 14px 18px; }
+    .nav-burger { display: flex; }
+    .cta-btn { display: none; }
+  }
+</style>
+
+<script>
+  const linkEls = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-link]'));
+  // Only scroll-type links participate in active-section tracking; page-nav
+  // links (like Work → /work) mark themselves active via SSR path check.
+  const scrollLinkEls = linkEls.filter(el => el.hasAttribute('data-scroll'));
+  const sectionIds = scrollLinkEls.map(el => el.dataset.scroll!).filter(Boolean);
+
+  // Smooth scroll (in-page). If we're NOT on the homepage, navigate to /#id
+  // so the browser lands on the homepage at the requested section.
+  document.querySelectorAll<HTMLElement>('[data-scroll]').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      const id = el.dataset.scroll!;
+      const onHome = window.location.pathname === '/' || window.location.pathname === '';
+      if (!onHome && el.hasAttribute('data-scroll-home')) {
+        ev.preventDefault();
+        window.location.href = id === 'top' ? '/' : `/#${id}`;
+        return;
+      }
+      (window as any).oraScrollTo?.(id);
+      // Close mobile menu if open
+      document.querySelector('.nav-links')?.classList.remove('is-open');
+      document.querySelector('[data-burger]')?.classList.remove('is-open');
+    });
+  });
+
+  // On homepage: honour a hash on load and scroll to that section.
+  if (window.location.hash && (window.location.pathname === '/' || window.location.pathname === '')) {
+    const id = window.location.hash.slice(1);
+    requestAnimationFrame(() => (window as any).oraScrollTo?.(id));
+  }
+
+  // Active-section tracking (only for scroll-type links, on the homepage).
+  const updateActive = () => {
+    if (window.location.pathname !== '/' && window.location.pathname !== '') return;
+    const probe = window.scrollY + 140;
+    let cur: string | null = null;
+    for (const id of sectionIds) {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top + window.scrollY <= probe) cur = id;
+    }
+    for (const el of scrollLinkEls) el.classList.toggle('is-active', el.dataset.scroll === cur);
+  };
+
+  // Hide-on-scroll-down / show-on-scroll-up. Ignores tiny wobbles (< SLOP px)
+  // so a jittery trackpad doesn't flicker the nav. Always visible near the top.
+  const nav = document.querySelector<HTMLElement>('.site-nav');
+  // Reveal after mount so the load fade runs.
+  requestAnimationFrame(() => nav?.classList.add('is-ready'));
+  const SHOW_ABOVE = 80;   // near top: never hide
+  const SLOP = 6;          // ignore small scroll wobbles
+  let lastY = window.scrollY;
+  const updateNavVisibility = () => {
+    if (!nav) return;
+    const y = window.scrollY;
+    const delta = y - lastY;
+    if (Math.abs(delta) < SLOP) return;
+    if (y < SHOW_ABOVE) {
+      nav.classList.remove('is-hidden');
+    } else if (delta > 0) {
+      nav.classList.add('is-hidden');        // scrolling down → hide
+    } else {
+      nav.classList.remove('is-hidden');     // scrolling up → show
+    }
+    lastY = y;
+  };
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      updateActive();
+      updateNavVisibility();
+    });
+  }, { passive: true });
+  updateActive();
+
+  // Mobile burger
+  document.querySelector<HTMLButtonElement>('[data-burger]')?.addEventListener('click', (e) => {
+    (e.currentTarget as HTMLElement).classList.toggle('is-open');
+    document.querySelector('.nav-links')?.classList.toggle('is-open');
+  });
+</script>

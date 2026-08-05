@@ -1,0 +1,315 @@
+---
+// Hero, aligned to the reference:
+//   • Title + subtitle left-aligned in the upper-left of the hero.
+//   • Astronaut mascot on the right, sitting on the crest of the ring.
+//   • Retro objects float around the astronaut (not scattered to the far edges).
+//   • The ring shows an orbiting soft-blur glow — no visible line/stroke.
+//
+// Object percent positions are RESTING positions (where they land after fade-in).
+// data-fx-vw / data-fy-vh describe the vector they fly IN from (in vw/vh),
+// preserved through resize so scroll-scrubbing stays smooth.
+// Deterministic starfield — same seeds every render, no hydration mismatch.
+const rand = (() => { let s = 1337; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; })();
+const stars = Array.from({ length: 90 }, () => ({
+  x:     +(rand() * 100).toFixed(2),
+  y:     +(rand() * 100).toFixed(2),
+  r:     +(0.4 + rand() * 1.5).toFixed(2),
+  a:     +(0.35 + rand() * 0.55).toFixed(2),
+  dur:   +(2.4 + rand() * 4.8).toFixed(2),
+  delay: +(rand() * 5).toFixed(2),
+}));
+
+// Astronaut anchored to the right; objects cluster around it on the right half.
+const objects = [
+  { id: 'obj1', l: 52, t: 74, w: 170, h: 125, anim: 'floatA 6.5s ease-in-out infinite',    src: '/images/retro-keyboard.png', alt: 'Retro keyboard', fx: -14, fy:  22, s: 0,    e: 0.5  },
+  { id: 'obj2', l: 55, t: 52, w:  95, h: 115, anim: 'floatB 7.5s ease-in-out infinite',    src: '/images/retro-floppy.png',   alt: 'Floppy disk',    fx: -18, fy: -12, s: 0.08, e: 0.58 },
+  { id: 'obj3', l: 62, t: 86, w: 130, h:  95, anim: 'floatC 8s ease-in-out infinite',      src: '/images/retro-paper1.png',   alt: 'Paper',          fx:  10, fy:  24, s: 0.15, e: 0.65 },
+  { id: 'obj4', l: 84, t: 62, w: 100, h: 115, anim: 'floatA 7s ease-in-out infinite .8s',  src: '/images/retro-paper2.png',   alt: 'Paper',          fx:  20, fy: -10, s: 0.2,  e: 0.7  },
+];
+---
+<div id="heroScroll" class="hero-scroll">
+  <section id="hero" class="hero">
+    <!-- floating starfield -->
+    <svg class="hero-stars" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      {stars.map(s => (
+        <circle cx={s.x} cy={s.y} r={s.r / 10} fill="#fff9ef" opacity={s.a}
+          style={`--dur:${s.dur}s;--delay:${s.delay}s;--a:${s.a};animation:starTwinkle var(--dur) ease-in-out var(--delay) infinite;`}
+        />
+      ))}
+    </svg>
+
+    <!-- ambient glow behind the ring -->
+    <div aria-hidden="true" class="hero-glow"></div>
+
+    <!-- Donut is the EXACT shape from public/images/Ora.svg (same path + gradient).
+         viewBox is cropped to y=594→1286 so the top HALF of the ring is what shows. -->
+    <div aria-hidden="true" class="hero-o">
+      <svg viewBox="0 594 1920 692" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <!-- Ora.svg palette, in a bounding-box gradient so the rotation animates
+               around the ring's own centre. The stops are repeated once so the
+               colour cycle stays continuous across the 360° rotation. -->
+          <linearGradient id="oraCol" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+            <stop offset="0"    stop-color="#51459b"/>
+            <stop offset="0.25" stop-color="#df5435"/>
+            <stop offset="0.5"  stop-color="#ff9317"/>
+            <stop offset="0.75" stop-color="#df5435"/>
+            <stop offset="1"    stop-color="#51459b"/>
+            <animateTransform attributeName="gradientTransform" type="rotate"
+              from="0 0.5 0.5" to="360 0.5 0.5" dur="14s" repeatCount="indefinite"/>
+          </linearGradient>
+          <filter id="oraGlowBlur" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="26"/>
+          </filter>
+        </defs>
+
+        <path fill="url(#oraCol)" fill-rule="evenodd" d="M261.99,1412.28c-34.91-124.66-36.59-249.98-4.03-375.01,49.12-188.61,155.36-337.83,319.61-442.6,202.42-129.12,420.36-156.98,648.61-82.58,165.08,53.81,296.55,155.37,387.05,304.09,140.64,231.13,150.84,471.21,34.68,714.98-60.87,127.74-154.71,227.77-275.12,302.34-20.92,12.95-43.02,24-64.51,36.04-3.31,1.86-6.27,4.34-9.39,6.54-28.68,11.56-57.35,23.13-86.03,34.69-17.84,4.63-35.68,9.25-53.52,13.88-116.43,30.17-233.54,32.19-350.56,5.23-190.54-43.9-341.33-147.14-451.41-308.83-17.28-25.38-30.72-53.35-46.04-80.07-1.48-2.59-3.7-4.76-5.57-7.12-11.85-29.4-23.71-58.79-35.56-88.19-2.72-11.13-5.11-22.34-8.2-33.37ZM1065.92,1590.61c168.94-40.19,290.55-178.69,306.47-349.55,4.56-48.87-.63-96.97-14.65-143.95-60.33-202.17-268.06-312.85-464.36-266.32-159.02,37.7-275.13,161.9-302.37,317.23-12.67,72.28-5.73,142.88,24.89,213.86,65.39,172.18,261.51,273.57,450.02,228.72Z"/>
+
+        <!-- Traveling ring light: heavy-blur streak that follows the same gradient,
+             so its color stays in sync with whatever section of the donut it's over. -->
+        <path
+          class="hero-ring-light"
+          fill="none"
+          stroke="url(#oraCol)"
+          stroke-width="42"
+          stroke-linecap="round"
+          pathLength="1000"
+          stroke-dasharray="180 820"
+          filter="url(#oraGlowBlur)"
+          style="mix-blend-mode:screen;"
+          d="M261.99,1412.28c-34.91-124.66-36.59-249.98-4.03-375.01,49.12-188.61,155.36-337.83,319.61-442.6,202.42-129.12,420.36-156.98,648.61-82.58,165.08,53.81,296.55,155.37,387.05,304.09,140.64,231.13,150.84,471.21,34.68,714.98-60.87,127.74-154.71,227.77-275.12,302.34-20.92,12.95-43.02,24-64.51,36.04-3.31,1.86-6.27,4.34-9.39,6.54-28.68,11.56-57.35,23.13-86.03,34.69-17.84,4.63-35.68,9.25-53.52,13.88-116.43,30.17-233.54,32.19-350.56,5.23-190.54-43.9-341.33-147.14-451.41-308.83-17.28-25.38-30.72-53.35-46.04-80.07-1.48-2.59-3.7-4.76-5.57-7.12-11.85-29.4-23.71-58.79-35.56-88.19-2.72-11.13-5.11-22.34-8.2-33.37Z"
+        />
+      </svg>
+    </div>
+
+    <!-- hero copy (left-aligned per reference) -->
+    <div class="hero-copy">
+      <h1 class="hero-title">Not Just Content</h1>
+      <p class="hero-sub">Most brands today are posting, shooting, boosting…<br />but still not growing.<br />That&rsquo;s where we come in.</p>
+    </div>
+
+    <!-- Floating retro objects, clustered around the mascot on the right. -->
+    {objects.map((o) => (
+      <div
+        class="hero-obj"
+        data-scrub
+        data-s={o.s}
+        data-e={o.e}
+        data-l={o.l}
+        data-t={o.t}
+        data-fx-vw={o.fx}
+        data-fy-vh={o.fy}
+        style={`width:${o.w}px;height:${o.h}px;`}
+      >
+        <div class="hero-obj-float" style={`animation:${o.anim};`}>
+          <img src={o.src} alt={o.alt} loading="eager" />
+        </div>
+      </div>
+    ))}
+
+    <!-- mascot (right side, sitting on the ring crest) -->
+    <div id="hs-mascot" class="hero-mascot" data-scrub data-s="0.25" data-e="0.92">
+      <div class="hero-mascot-bob">
+        <img src="/images/astronaut.webp" alt="Ora astronaut mascot" loading="eager" fetchpriority="high" width="953" height="1093" decoding="async" />
+      </div>
+    </div>
+
+    <!-- bottom shadow so the hero fades into the next section -->
+    <div class="hero-bottom-shade" aria-hidden="true"></div>
+  </section>
+</div>
+
+<style>
+  .hero-scroll { position: relative; z-index: 1; height: 240vh; }
+  .hero {
+    position: sticky; top: 0; z-index: 1; height: 100vh; overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg,#000 0%,#000 76%,rgba(0,0,0,.55) 92%,transparent 100%);
+    mask-image:        linear-gradient(180deg,#000 0%,#000 76%,rgba(0,0,0,.55) 92%,transparent 100%);
+  }
+
+  /* Starfield: SVG scaled 100×100 → stretched over the hero. Each circle twinkles
+     via inline `animation:`; the whole layer slowly drifts. */
+  .hero-stars {
+    position: absolute; inset: -6%; z-index: 0;
+    width: 112%; height: 112%;
+    pointer-events: none;
+    animation: starDrift 80s ease-in-out infinite;
+    filter: drop-shadow(0 0 3px rgba(255,244,220,0.35));
+  }
+
+  /* Long, feathered black fade — the ONLY transition element. Combined with the
+     hero mask above it, the planet arc dissolves smoothly into the pure-black
+     WhoWeAre section with no visible seam. */
+  .hero-bottom-shade {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 360px; z-index: 6;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(0,0,0,0)    0%,
+      rgba(0,0,0,0.15) 40%,
+      rgba(0,0,0,0.55) 75%,
+      rgba(0,0,0,1)    100%
+    );
+  }
+
+  .hero-glow {
+    position: absolute; z-index: 1; left: 50%; top: 112%; transform: translate(-50%,-50%);
+    width: min(150vw,1500px); height: min(150vw,1500px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,120,40,0.30), rgba(223,84,53,0.13) 42%, transparent 62%);
+    filter: blur(8px); pointer-events: none;
+  }
+
+  /* Ora.svg with a cropped viewBox (0 594 1920 692) = the top half of the ring.
+     Slight negative bottom pushes the donut down so its arc peaks a touch lower. */
+  .hero-o {
+    position: absolute; z-index: 2;
+    left: 0; right: 0; bottom: -8%;
+    width: 100%;
+    aspect-ratio: 1920 / 692;
+    pointer-events: none;
+    transform-origin: 50% 100%;
+    will-change: transform, opacity;
+    animation: oraRingHalf 1.2s cubic-bezier(.22,.75,.25,1) both;
+    filter: drop-shadow(0 0 55px rgba(255,120,40,0.5));
+  }
+  .hero-o svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  @keyframes oraRingHalf {
+    0%   { opacity: 0; transform: translateY(20%) scale(.85); }
+    55%  { opacity: 1; }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  /* Traveling ring light — orbits the donut path. Colour comes from the same
+     gradient used for the ring fill, so it stays in sync automatically. */
+  .hero-ring-light {
+    animation: cometMoveR 14s linear infinite;
+  }
+
+  /* ── copy ─────────────────────────────────────────────────────────── */
+  /* Title + subtitle both LEFT-aligned inside a centered container.
+     Reduced top-padding so the words sit safely above the donut's top edge. */
+  .hero-copy {
+    position: absolute; z-index: 5;
+    left: 0; right: 0; top: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 130px 60px 0;
+    pointer-events: none;
+    animation: fadeUp 1s cubic-bezier(.2,.7,.2,1) .1s both;
+  }
+  .hero-title {
+    font-family: 'Madani'; font-weight: 900;
+    font-size: clamp(52px, 7.6vw, 128px);
+    line-height: .98; letter-spacing: -2.5px; margin: 0;
+    color: #fff; text-shadow: 0 4px 40px rgba(0,0,0,0.6);
+    text-align: left;
+    white-space: nowrap;
+  }
+  .hero-sub {
+    font-family: 'Madani'; font-weight: 400;
+    font-size: clamp(15px, 1.15vw, 19px);
+    line-height: 1.55; color: #d8d0c7;
+    margin: 32px 0 0;
+    max-width: 380px;                 /* kept short so it stays clear of the astronaut */
+    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+    text-align: left;
+  }
+
+  /* ── floating objects & mascot ────────────────────────────────────── */
+  .hero-obj {
+    position: absolute; z-index: 5;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .hero-obj img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 6px 20px rgba(0,0,0,0.5)); }
+  .hero-obj-float { width: 100%; height: 100%; }
+
+  .hero-mascot {
+    position: absolute; z-index: 4;
+    right: 8%; bottom: -2%;                    /* sits on the lowered horizon */
+    width: min(38vw, 460px); aspect-ratio: 953 / 1093;
+    opacity: 0; transform: translate(0, 120px) scale(0.9);
+    will-change: transform, opacity;
+  }
+  .hero-mascot-bob { width: 100%; height: 100%; animation: bob 6s ease-in-out infinite; }
+  .hero-mascot img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.55)); }
+
+  @media (max-width: 1100px) {
+    .hero-copy { padding: 150px 40px 0; }
+    .hero-title { font-size: clamp(44px, 7vw, 88px); letter-spacing: -2px; }
+    .hero-mascot { width: min(46vw, 440px); }
+  }
+  @media (max-width: 780px) {
+    .hero-scroll { height: 200vh; }
+    .hero-copy { padding: 120px 22px 0; }
+    .hero-title { font-size: clamp(36px, 9vw, 60px); letter-spacing: -1px; white-space: normal; }
+    .hero-sub { font-size: 15px; margin-top: 22px; max-width: 92%; }
+    .hero-mascot { right: -2%; width: 72vw; bottom: -8%; }
+    .hero-obj { transform: scale(0.6) !important; }
+  }
+</style>
+
+<script>
+  // Scroll-scrubbed hero intro.
+  const heroScroll = document.getElementById('heroScroll');
+  const scrubEls = Array.from(document.querySelectorAll<HTMLElement>('[data-scrub]'));
+  if (heroScroll && scrubEls.length) {
+    const clamp = (v: number, a: number, b: number) => v < a ? a : v > b ? b : v;
+    const smooth = (t: number) => t * t * (3 - 2 * t);
+
+    type C = { el: HTMLElement; s: number; e: number; fx: number; fy: number; isMascot: boolean };
+    let cached: C[] | null = null;
+
+    const cache = () => {
+      cached = scrubEls.map(el => {
+        const s = parseFloat(el.dataset.s || '0');
+        const e = parseFloat(el.dataset.e || '1');
+        const isMascot = el.id === 'hs-mascot';
+        if (!isMascot) {
+          const L = parseFloat(el.dataset.l || '50');
+          const T = parseFloat(el.dataset.t || '50');
+          el.style.left = L.toFixed(1) + '%';
+          el.style.top  = T.toFixed(1) + '%';
+        }
+        const fx = isMascot ? 0   : parseFloat(el.dataset.fxVw || '0');
+        const fy = isMascot ? 120 : parseFloat(el.dataset.fyVh || '0');
+        return { el, s, e, fx, fy, isMascot };
+      });
+    };
+    cache();
+
+    const scrub = () => {
+      if (!cached) return;
+      const total = heroScroll.offsetHeight - window.innerHeight;
+      const raw = total > 0 ? -heroScroll.getBoundingClientRect().top / total : 0;
+      const p = clamp(raw, 0, 1);
+      for (const c of cached) {
+        const t = smooth(clamp((p - c.s) / (c.e - c.s), 0, 1));
+        const fromScale = c.isMascot ? 0.9 : 0.55;
+        const sc = fromScale * (1 - t) + t;
+        c.el.style.opacity = t.toFixed(3);
+        if (c.isMascot) {
+          const y = c.fy * (1 - t);
+          c.el.style.transform = `translate(0px, ${y.toFixed(1)}px) scale(${sc.toFixed(3)})`;
+        } else {
+          // Objects fly in from a nearby vector (not the far-corner CTA anymore),
+          // so they read as "settling into place" around the mascot instead of
+          // swooping across the screen.
+          const x = c.fx * (1 - t);
+          const y = c.fy * (1 - t);
+          c.el.style.transform = `translate(${x.toFixed(2)}vw, ${y.toFixed(2)}vh) scale(${sc.toFixed(3)})`;
+        }
+      }
+    };
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return; ticking = true;
+      requestAnimationFrame(() => { ticking = false; scrub(); });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', () => { cache(); scrub(); });
+    scrub();
+  }
+</script>

@@ -1,0 +1,378 @@
+---
+// What We Do — 4 clickable services. Below the row, a detail panel shows
+// the currently-selected service (title, subtitle, bullet list on the left;
+// giant glowing number + floating 3D icons on the right).
+// Copy matches the reference slides exactly.
+const services = [
+  {
+    id: 'content',
+    num: '01',
+    label: 'Content & Production',
+    subtitle: 'We create content that reflects the brand — not just fills the feed.',
+    icon: '/images/services/content-production.webp',
+    bullets: [
+      'Brand-led photography & videography',
+      'Creative direction & concept development',
+      'Campaign production & shoots',
+      'Short-form & social-first video content',
+      'Visual storytelling & art direction',
+      'Post-production, editing & color grading',
+    ],
+  },
+  {
+    id: 'strategy',
+    num: '02',
+    label: 'Strategy & Social Media',
+    subtitle: 'We bring structure to content — so it actually means something.',
+    icon: '/images/services/strategy-social.webp',
+    bullets: [
+      'Content strategy & planning',
+      'Social media management',
+      'Brand positioning & messaging',
+      'Monthly content calendars',
+      'Captioning & storytelling',
+      'Performance review & optimization',
+    ],
+  },
+  {
+    id: 'growth',
+    num: '03',
+    label: 'Growth & Performance',
+    subtitle: 'We focus on turning attention into measurable results.',
+    icon: '/images/services/growth-performance.webp',
+    bullets: [
+      'Paid media strategy & execution',
+      'Campaign setup & optimization',
+      'Audience targeting & segmentation',
+      'Creative testing & iterations',
+      'Funnel thinking & conversion tracking',
+      'Performance reporting & insights',
+    ],
+  },
+  {
+    id: 'ai',
+    num: '04',
+    label: 'Digital & AI Solutions',
+    subtitle: 'Content needs a system behind it. We build what supports the brand beyond the surface.',
+    icon: '/images/services/digital-ai.webp',
+    bullets: [
+      'Website & digital platform development',
+      'AI chatbots & automation systems',
+      'Landing pages for campaigns',
+      'CRM & system integrations',
+      'Custom-built digital solutions',
+    ],
+  },
+];
+---
+<section id="do" class="wwd">
+  <div class="container">
+    <div class="reveal">
+      <h2 class="wwd-title">What We Do</h2>
+      <p class="wwd-lead">
+        We don't offer disconnected services —<br />we build systems that help brands grow.
+      </p>
+    </div>
+
+    <div class="reveal wwd-grid" role="tablist" aria-label="Services">
+      {services.map((s, i) => (
+        <button
+          class={`wwd-item ${i === 0 ? 'is-active' : ''}`}
+          role="tab"
+          data-service={s.id}
+          aria-selected={i === 0 ? 'true' : 'false'}
+        >
+          <span class="wwd-num">{s.num}</span>
+          <span class="wwd-label">{s.label}</span>
+        </button>
+      ))}
+    </div>
+
+    <!-- Detail panels — stacked; only the active one is visible. -->
+    <div class="wwd-panels reveal" data-wwd-panels>
+      {services.map((s, i) => (
+        <article
+          class={`wwd-panel ${i === 0 ? 'is-active' : ''}`}
+          data-panel={s.id}
+          role="tabpanel"
+          hidden={i !== 0}
+        >
+          <div class="wwd-panel-left">
+            <h3 class="wwd-panel-title">{s.label}</h3>
+            <p class="wwd-panel-sub">{s.subtitle}</p>
+            <ul class="wwd-panel-list">
+              {s.bullets.map((b) => (
+                <li>{b}</li>
+              ))}
+            </ul>
+          </div>
+          <div class="wwd-panel-right" aria-hidden="true">
+            <div class="wwd-big-num">{s.num}</div>
+            <img class="wwd-panel-icon" src={s.icon} alt="" loading="lazy" />
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <div class="reveal wwd-closing">
+      <p class="wwd-closing-cap">Closing line</p>
+      <p class="wwd-closing-text">
+        Every part of the work is connected — and that's where the real impact happens.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .wwd {
+    position: relative; z-index: 1;
+    padding: 130px 0 150px;
+    background: radial-gradient(100% 60% at 50% 120%, rgba(223,84,53,0.10), transparent 62%);
+  }
+  .wwd-title {
+    font-family: 'Madani'; font-weight: 900;
+    font-size: clamp(44px, 5.5vw, 84px);
+    letter-spacing: -2px; margin: 0 0 22px;
+    color: #F3EDE4;
+  }
+  .wwd-lead {
+    font-family: 'Madani'; font-weight: 400;
+    font-size: clamp(18px, 1.5vw, 24px);
+    line-height: 1.6; color: #b8b0a7;
+    margin: 0; max-width: 620px;
+  }
+
+  /* ── Clickable service row ───────────────────────────── */
+  .wwd-grid {
+    margin-top: 90px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;
+  }
+  .wwd-item {
+    appearance: none; background: transparent; border: 0;
+    padding: 12px 8px;
+    text-align: center; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    color: inherit; font-family: inherit;
+    transition: transform .3s ease;
+  }
+  .wwd-item:hover { transform: translateY(-2px); }
+  .wwd-num {
+    font-family: 'Alumni', sans-serif;
+    font-size: clamp(90px, 8vw, 130px);
+    line-height: .85;
+    background: linear-gradient(180deg,#f0955a 0%,#7a3418 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 22px rgba(255,120,50,0.15));
+    transition: filter .35s ease;
+  }
+  .wwd-item.is-active .wwd-num {
+    background: linear-gradient(180deg,#ffb066 0%,#c25a26 100%);
+    -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(0 0 46px rgba(255,140,55,0.5));
+  }
+  .wwd-label {
+    display: inline-block;
+    font-family: 'Madani', sans-serif;
+    font-weight: 700; font-size: clamp(15px, 1.2vw, 19px);
+    color: #cfc7be;
+    padding: 11px 26px;
+    border-radius: 999px;
+    transition: color .3s ease, background .3s ease, border-color .3s ease, box-shadow .3s ease;
+    border: 1px solid transparent;
+  }
+  .wwd-item.is-active .wwd-label {
+    color: #fff;
+    background: linear-gradient(180deg,#4c4844,#242119);
+    border-color: rgba(255,255,255,0.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.28),
+      inset 0 -3px 7px rgba(0,0,0,0.6),
+      0 0 26px rgba(255,140,50,0.25);
+  }
+
+  /* ── Detail panels ───────────────────────────────────── */
+  .wwd-panels {
+    position: relative;
+    margin-top: 60px;
+    min-height: 460px;
+  }
+  .wwd-panel {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    animation: wwd-fade .5s ease both;
+  }
+  .wwd-panel[hidden] { display: none; }
+  @keyframes wwd-fade {
+    from { opacity: 0; transform: translateY(12px); filter: blur(3px); }
+    to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+  }
+
+  .wwd-panel-title {
+    font-family: 'Madani', sans-serif;
+    font-weight: 900;
+    font-size: clamp(36px, 4vw, 60px);
+    letter-spacing: -1.5px;
+    color: #ffffff;
+    margin: 0 0 16px;
+    line-height: 1;
+  }
+  .wwd-panel-sub {
+    font-family: 'Madani', sans-serif;
+    font-weight: 400;
+    font-size: clamp(16px, 1.3vw, 20px);
+    color: #b8b0a7;
+    margin: 0 0 34px;
+    line-height: 1.55;
+    max-width: 560px;
+  }
+  .wwd-panel-list {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .wwd-panel-list li {
+    position: relative;
+    padding-left: 24px;
+    font-family: 'Madani', sans-serif;
+    font-weight: 700;
+    font-size: clamp(15px, 1.15vw, 18px);
+    color: #efe8dc;
+    line-height: 1.4;
+  }
+  .wwd-panel-list li::before {
+    content: "";
+    position: absolute; left: 0; top: 0.65em;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #efe8dc;
+    transform: translateY(-50%);
+  }
+
+  /* Right column: giant glowing number + floating icon overlay.
+     A warm red/orange "fog" pseudo-element sits behind the bottom of the
+     number, adding an ambient glow that mimics the reference. */
+  .wwd-panel-right {
+    position: relative;
+    height: min(60vh, 520px);
+    min-height: 420px;
+  }
+  .wwd-panel-right::after {
+    content: "";
+    position: absolute;
+    left: 10%; right: -10%;
+    bottom: -60px;
+    height: 60%;
+    background:
+      radial-gradient(ellipse 70% 100% at 60% 30%,
+        rgba(255,90,50,0.35) 0%,
+        rgba(220,60,30,0.20) 25%,
+        rgba(180,40,20,0.10) 55%,
+        transparent 85%);
+    filter: blur(24px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* Giant glowing number — no reflection. The ambient warm fog behind
+     (from .wwd-panel-right::after) handles the "standing on warm light"
+     effect visible in the reference. */
+  .wwd-big-num {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    font-family: 'Alumni', sans-serif;
+    font-size: clamp(280px, 32vw, 520px);
+    line-height: .8;
+    background: linear-gradient(180deg,#ff8a3a 0%,#7a2e10 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 90px rgba(255,120,50,0.35));
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -6px;
+  }
+  /* Icons cluster at the TOP-RIGHT of the panel — same anchor as before,
+     but scaled 2x so they read twice as big without moving position.
+     scale is applied with transform-origin: top right so it grows AWAY from
+     the corner rather than shifting the anchor point. */
+  .wwd-panel-icon {
+    position: absolute;
+    top: -40px;
+    right: 20px;
+    width: 42%;
+    height: 42%;
+    object-fit: contain;
+    object-position: top right;
+    filter: drop-shadow(0 25px 45px rgba(0,0,0,0.55));
+    animation: wwd-float 7s ease-in-out infinite;
+    z-index: 2;
+    pointer-events: none;
+  }
+  /* Content & Production panel — bespoke icon position. */
+  .wwd-panel[data-panel="content"] .wwd-panel-icon {
+    right: 45px;
+    top: -70px;
+  }
+  @keyframes wwd-float {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-14px); }
+  }
+
+  /* ── Closing ─────────────────────────────────────────── */
+  .wwd-closing { margin-top: 100px; }
+  .wwd-closing-cap {
+    font-family: 'Madani'; font-weight: 600;
+    font-size: 16px; letter-spacing: 1px;
+    color: #8a4a2a; margin: 0 0 6px;
+    text-transform: uppercase;
+  }
+  .wwd-closing-text {
+    font-family: 'Madani'; font-weight: 700;
+    font-size: clamp(24px, 2.6vw, 40px);
+    color: #df5435; margin: 0;
+    letter-spacing: -.5px;
+  }
+
+  /* ── Responsive ──────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .wwd { padding: 80px 0 100px; }
+    .wwd-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; margin-top: 60px; }
+    .wwd-num { font-size: 88px; }
+    .wwd-label { font-size: 16px; padding: 9px 20px; }
+    .wwd-panels { margin-top: 40px; min-height: auto; }
+    .wwd-panel { grid-template-columns: 1fr; gap: 30px; }
+    .wwd-panel-right { height: 260px; min-height: 260px; }
+    .wwd-big-num { justify-content: center; font-size: 180px; }
+    .wwd-closing { margin-top: 60px; }
+  }
+</style>
+
+<script>
+  // Click a service tile → mark it active and show its detail panel.
+  const items  = Array.from(document.querySelectorAll<HTMLButtonElement>('#do [data-service]'));
+  const panels = Array.from(document.querySelectorAll<HTMLElement>('#do [data-panel]'));
+  for (const btn of items) {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.service!;
+      for (const b of items) {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      }
+      for (const p of panels) {
+        const on = p.dataset.panel === id;
+        p.classList.toggle('is-active', on);
+        if (on) {
+          p.hidden = false;
+          // Re-trigger the fade-in animation
+          p.style.animation = 'none';
+          void p.offsetWidth;
+          p.style.animation = '';
+        } else {
+          p.hidden = true;
+        }
+      }
+    });
+  }
+</script>

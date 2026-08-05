@@ -1,0 +1,52 @@
+---
+import OraLogo from './OraLogo.astro';
+---
+<footer id="about" class="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <OraLogo height={54} />
+      <p class="footer-tag">Content, strategy and growth built as one system. Let's make something that actually moves.</p>
+    </div>
+    <div class="footer-cta">
+      <button class="cta-btn" data-open-modal>Get Started</button>
+      <a href="mailto:hello@oramedia.com" class="footer-email">hello@oramedia.com</a>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 Ora Digital Media. All rights reserved.</span>
+    <span>Sharjah · Abu Dhabi · UAE</span>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative; z-index: 1;
+    padding: 90px 0 46px;
+    background: linear-gradient(180deg,rgba(8,5,10,0) 0%,rgba(8,5,10,0.45) 45%,rgba(6,4,8,0.8) 100%);
+  }
+  .footer-top {
+    display: flex; flex-wrap: wrap; gap: 40px;
+    justify-content: space-between; align-items: flex-end;
+  }
+  .footer-tag {
+    font-family: 'Madani'; font-weight: 400; font-size: 16px;
+    color: #8a827a; margin: 16px 0 0;
+    max-width: 340px; line-height: 1.6;
+  }
+  .footer-cta { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .footer-email {
+    font-family: 'Madani'; font-weight: 500; font-size: 16px;
+    color: #b8b0a7;
+  }
+  .footer-bottom {
+    margin-top: 50px; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    font-family: 'Madani'; font-weight: 400; font-size: 14px;
+    color: #6a635c;
+  }
+  @media (max-width: 700px) {
+    .site-footer { padding: 60px 0 30px; }
+    .footer-top { flex-direction: column; align-items: flex-start; }
+  }
+</style>
