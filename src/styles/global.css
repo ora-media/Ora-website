@@ -26,7 +26,7 @@
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: #0a0610;
+  background: transparent;   /* BaseLayout's fixed layers provide the bg */
   color: #ECE4DB;
   font-family: 'Madani', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;

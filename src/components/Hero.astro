@@ -8,17 +8,6 @@
 // Object percent positions are RESTING positions (where they land after fade-in).
 // data-fx-vw / data-fy-vh describe the vector they fly IN from (in vw/vh),
 // preserved through resize so scroll-scrubbing stays smooth.
-// Deterministic starfield — same seeds every render, no hydration mismatch.
-const rand = (() => { let s = 1337; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; })();
-const stars = Array.from({ length: 90 }, () => ({
-  x:     +(rand() * 100).toFixed(2),
-  y:     +(rand() * 100).toFixed(2),
-  r:     +(0.4 + rand() * 1.5).toFixed(2),
-  a:     +(0.35 + rand() * 0.55).toFixed(2),
-  dur:   +(2.4 + rand() * 4.8).toFixed(2),
-  delay: +(rand() * 5).toFixed(2),
-}));
-
 // Astronaut anchored to the right; objects cluster around it on the right half.
 const objects = [
   { id: 'obj1', l: 52, t: 74, w: 170, h: 125, anim: 'floatA 6.5s ease-in-out infinite',    src: '/images/retro-keyboard.png', alt: 'Retro keyboard', fx: -14, fy:  22, s: 0,    e: 0.5  },
@@ -29,15 +18,6 @@ const objects = [
 ---
 <div id="heroScroll" class="hero-scroll">
   <section id="hero" class="hero">
-    <!-- floating starfield -->
-    <svg class="hero-stars" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      {stars.map(s => (
-        <circle cx={s.x} cy={s.y} r={s.r / 10} fill="#fff9ef" opacity={s.a}
-          style={`--dur:${s.dur}s;--delay:${s.delay}s;--a:${s.a};animation:starTwinkle var(--dur) ease-in-out var(--delay) infinite;`}
-        />
-      ))}
-    </svg>
-
     <!-- ambient glow behind the ring -->
     <div aria-hidden="true" class="hero-glow"></div>
 
@@ -125,16 +105,6 @@ const objects = [
     position: sticky; top: 0; z-index: 1; height: 100vh; overflow: hidden;
     -webkit-mask-image: linear-gradient(180deg,#000 0%,#000 76%,rgba(0,0,0,.55) 92%,transparent 100%);
     mask-image:        linear-gradient(180deg,#000 0%,#000 76%,rgba(0,0,0,.55) 92%,transparent 100%);
-  }
-
-  /* Starfield: SVG scaled 100×100 → stretched over the hero. Each circle twinkles
-     via inline `animation:`; the whole layer slowly drifts. */
-  .hero-stars {
-    position: absolute; inset: -6%; z-index: 0;
-    width: 112%; height: 112%;
-    pointer-events: none;
-    animation: starDrift 80s ease-in-out infinite;
-    filter: drop-shadow(0 0 3px rgba(255,244,220,0.35));
   }
 
   /* Long, feathered black fade — the ONLY transition element. Combined with the

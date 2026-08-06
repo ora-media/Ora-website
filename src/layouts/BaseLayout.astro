@@ -2,6 +2,28 @@
 import '../styles/global.css';
 interface Props { title?: string; description?: string; }
 const { title = 'Ora Digital Media', description = "Content, strategy and growth built as one system. Let's make something that actually moves." } = Astro.props;
+
+// Classic CSS "streaming stars" technique — one element per size class with a
+// giant multi-value box-shadow that paints hundreds of stars, translated
+// continuously upward for the space-flight look (as in sarazond/LYGbwj).
+const rand = (() => { let s = 20260806; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; })();
+const FIELD_W = 2000;   // horizontal spread the shadows are laid out across
+const FIELD_H = 2000;   // vertical spread — must match keyframe translateY
+
+const makeStars = (count: number) => {
+  const parts: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const x = Math.floor(rand() * FIELD_W);
+    const y = Math.floor(rand() * FIELD_H);
+    parts.push(`${x}px ${y}px #fff`);
+  }
+  return parts.join(', ');
+};
+
+// Three layers — small (many, fast), medium (some, mid), big (few, slow).
+const starsSmall  = makeStars(700);
+const starsMedium = makeStars(200);
+const starsBig    = makeStars(100);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -20,22 +42,29 @@ const { title = 'Ora Digital Media', description = "Content, strategy and growth
       <div aria-hidden="true" class="bg-gradient"></div>
       <div aria-hidden="true" class="bg-glows"></div>
 
+      <!-- Site-wide starfield: three layers of streaming stars painted with a
+           multi-value box-shadow (sarazond/LYGbwj technique). Each layer's
+           ::after duplicates the shadow FIELD_H below so the loop is seamless. -->
+      <div aria-hidden="true" class="stars-field">
+        <div class="stars stars-small"  style={`box-shadow: ${starsSmall};  --shadows-small: ${starsSmall};`}></div>
+        <div class="stars stars-medium" style={`box-shadow: ${starsMedium}; --shadows-medium: ${starsMedium};`}></div>
+        <div class="stars stars-big"    style={`box-shadow: ${starsBig};    --shadows-big: ${starsBig};`}></div>
+      </div>
+
       <slot />
     </div>
 
     <style is:global>
-      /* Pure black base — always at the bottom of the stack */
+      /* ── Backdrop layers ─────────────────────────────────── */
       .bg-gradient {
         position: fixed; inset: 0; z-index: -3; pointer-events: none; overflow: hidden;
         background: #050308;
       }
-      /* Subtle purple → warm-red horizontal tint sitting on top of the black
-         base but under stars and content. */
+      /* Gradient overlay sits ABOVE the stars but BELOW site content. Stars
+         at z-index: -2, gradient at z-index: -1, content at natural stacking. */
       .bg-gradient::after {
         content: "";
-        position: fixed;
-        inset: 0;
-        z-index: -2;
+        position: fixed; inset: 0; z-index: -1;
         pointer-events: none;
         background: linear-gradient(90deg,
           #4a2f8a 0%,
@@ -46,11 +75,65 @@ const { title = 'Ora Digital Media', description = "Content, strategy and growth
           #b04a2e 100%);
         opacity: 0.12;
       }
-      .bg-glows { display: none; }   /* removed — page background is pure black */
+      .bg-glows { display: none; }
+
+      /* ── Streaming starfield (sarazond/LYGbwj technique) ──────
+         Each .stars layer is a single 1×1 (or larger) element with a giant
+         multi-value box-shadow that paints hundreds of white dots across a
+         2000×2000 field. A ::after clone is placed 2000px below via JS so
+         the layer can translate up 2000px seamlessly on a linear loop. */
+      .stars-field {
+        position: fixed; inset: 0; z-index: -2;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .stars,
+      .stars::after {
+        position: absolute;
+        left: 0; top: 0;
+        background: transparent;
+        border-radius: 50%;
+      }
+      .stars::after {
+        content: "";
+        top: 2000px;                    /* == FIELD_H */
+      }
+      .stars-small,
+      .stars-small::after  { width: 1px; height: 1px; }
+      .stars-medium,
+      .stars-medium::after { width: 2px; height: 2px; }
+      .stars-big,
+      .stars-big::after    { width: 3px; height: 3px; }
+
+      .stars-small  { animation: starStream  50s linear infinite; }
+      .stars-medium { animation: starStream 100s linear infinite; }
+      .stars-big    { animation: starStream 150s linear infinite; }
+
+      /* Duplicate each layer's box-shadow onto its ::after via the CSS
+         variable declared inline. This makes the loop seamless. */
+      .stars-small::after  { box-shadow: var(--shadows-small); }
+      .stars-medium::after { box-shadow: var(--shadows-medium); }
+      .stars-big::after    { box-shadow: var(--shadows-big); }
+
+      @keyframes starStream {
+        from { transform: translateY(0); }
+        to   { transform: translateY(-2000px); }   /* == FIELD_H, seamless loop */
+      }
+
+      /* Subtle twinkle — pulses the whole layer's opacity between two soft
+         extremes. Cheap: only one animation per layer, not per star. */
+      .stars-small  { opacity: .9; }
+      .stars-medium { opacity: .85; }
+      .stars-big    { opacity: .8; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .stars { animation: none; }
+      }
+
     </style>
 
     <script>
-      // Global scroll utilities + reveal-on-scroll
+      // ── Global scroll utilities + reveal-on-scroll ───────
       const io = new IntersectionObserver((entries) => {
         for (const e of entries) {
           if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
@@ -60,7 +143,6 @@ const { title = 'Ora Digital Media', description = "Content, strategy and growth
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', observe);
       else observe();
 
-      // Smooth-scroll helper any element can use
       (window as any).oraScrollTo = (id: string) => {
         if (id === 'top') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
         const el = document.getElementById(id);
@@ -68,6 +150,7 @@ const { title = 'Ora Digital Media', description = "Content, strategy and growth
         const y = el.getBoundingClientRect().top + window.scrollY - 80;
         window.scrollTo({ top: y, behavior: 'smooth' });
       };
+
     </script>
   </body>
 </html>
