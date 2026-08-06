@@ -103,12 +103,10 @@ const SNAKE_D = `M 540 -60
       />
 
       <!-- Balls: flat 2D solid orange discs. The blur halo behind fades in
-           on lit; the disc itself never changes. -->
+           when scroll passes the ball's threshold. -->
       {stops.map((s) => (
         <g class="hw-ball-group" data-hw-ball data-threshold={s.threshold}>
-          <!-- Blurred halo — invisible until lit -->
           <circle class="hw-ball-halo" cx={s.x} cy={s.y} r="18" fill="#ff8a3a" filter="url(#hwBallGlow)" opacity="0" />
-          <!-- Flat disc (constant) -->
           <circle class="hw-ball-core" cx={s.x} cy={s.y} r="8" fill="#ff8a3a" />
         </g>
       ))}
@@ -171,9 +169,7 @@ const SNAKE_D = `M 540 -60
     position: relative;
     display: inline-block;
   }
-  /* Flat orange disc — sized to be roughly 1.5× the cap-height of the title,
-     which puts it right in the "e W" span of "How We Work" per the reference.
-     Nudged slightly right of centre to sit under the "We" like in the design. */
+  /* Flat orange disc — always visible. */
   .hw-sun {
     position: absolute;
     left: 50%; top: 50%;
@@ -250,8 +246,8 @@ const SNAKE_D = `M 540 -60
     transition: stroke-dashoffset .12s linear;
   }
 
-  /* Flat 2D discs — never change fill, size, or drop-shadow. Only the blurred
-     halo behind them fades in when the ball is lit. */
+  /* Balls — SVG circles inside the stage SVG. Halo fades in when scroll
+     passes the ball's threshold; the disc itself stays a solid orange. */
   .hw-ball-halo { transition: opacity .5s ease; }
   .hw-ball-group.is-lit .hw-ball-halo { opacity: 0.9; }
 
@@ -380,7 +376,7 @@ const SNAKE_D = `M 540 -60
       const off      = String(total * (1 - p));
       line.style.strokeDashoffset = off;
       if (glow) glow.style.strokeDashoffset = off;
-      // toggle each stop + ball
+      // Toggle each stop + ball on scroll passing their threshold.
       for (const stop of stops) {
         const t = parseFloat(stop.dataset.threshold || '1');
         stop.classList.toggle('is-lit', p >= t);
