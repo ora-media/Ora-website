@@ -3,20 +3,11 @@
 // cutting through the dark vignette that covers the grid. Real photos are
 // pulled from /images/work/ so the section reads like a portfolio wall.
 
-// Curated image order — food up top, product/lifestyle in the middle, and a
-// darker row of Mahrousah social media designs at the bottom, matching the
-// reference's descending-brightness feel.
-const tiles = [
-  // Row 1 — food photography (6)
-  'photo-1.jpg',  'photo-2.jpg',  'photo-3.jpg',
-  'photo-4.jpg',  'photo-5.jpg',  'photo-6.jpg',
-  // Row 2 — food photography + drink shots (6)
-  'photo-7.jpg',  'photo-8.jpg',  'photo-9.jpg',
-  'photo-10.jpg', 'social-1.jpg', 'social-2.jpg',
-  // Row 3 — Mahrousah social media designs (6)
-  'social-3.jpg', 'social-4.jpg', 'social-5.jpg',
-  'social-6.jpg', 'social-7.jpg', 'social-8.jpg',
-].map((file, i) => ({ id: `work-${i+1}`, src: `/images/work/${file}` }));
+// 18 tiles, in numerical order 1.webp → 18.webp.
+const tiles = Array.from({ length: 18 }, (_, i) => ({
+  id: `work-${i + 1}`,
+  src: `/images/work/${i + 1}.webp`,
+}));
 ---
 <section id="work" class="work">
   <div class="work-inner">
@@ -31,16 +22,25 @@ const tiles = [
 
     <div class="work-grid">
       {tiles.map(t => (
-        <div class="work-tile" data-id={t.id}>
+        <button class="work-tile" data-id={t.id} data-src={t.src} type="button" aria-label="Expand image">
           <img src={t.src} alt="" loading="lazy" />
-        </div>
+        </button>
       ))}
     </div>
-    <div aria-hidden="true" class="work-vignette"></div>
   </div>
 
+  <!-- Full-width overlays — cover the whole viewport width, not the container. -->
+  <div aria-hidden="true" class="work-vignette"></div>
   <div class="work-flash" aria-hidden="true"></div>
 </section>
+
+<!-- Lightbox — full-screen enlarged image, click backdrop or Esc to close. -->
+<div class="work-lightbox" data-work-lightbox hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Enlarged image">
+  <button class="work-lightbox-close" data-work-lightbox-close aria-label="Close">&times;</button>
+  <button class="work-lightbox-nav prev" data-work-lightbox-prev aria-label="Previous">&#8249;</button>
+  <img class="work-lightbox-img" data-work-lightbox-img alt="" />
+  <button class="work-lightbox-nav next" data-work-lightbox-next aria-label="Next">&#8250;</button>
+</div>
 
 <style>
   .work {
@@ -113,6 +113,14 @@ const tiles = [
     overflow: hidden;
     position: relative;
     box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    /* Reset button defaults */
+    appearance: none;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
   }
   .work-tile img {
     width: 100%;
@@ -129,18 +137,34 @@ const tiles = [
     transform: scale(1.03);
   }
 
-  /* Soft vignette around the grid — pure black tones, no colour tint. */
+  /* Soft vignette — covers the FULL viewport width of the section and
+     extends BEYOND the section top/bottom so the fade blends smoothly into
+     whatever section sits above/below (no hard "box of shadow" edge). */
   .work-vignette {
     position: absolute;
-    inset: -40px;
+    top: -180px; bottom: -180px; left: 0; right: 0;
     pointer-events: none;
-    background: radial-gradient(ellipse 78% 70% at 50% 50%,
+    background: radial-gradient(ellipse 65% 55% at 50% 50%,
       transparent 40%,
       rgba(0,0,0,0.5) 78%,
-      rgba(0,0,0,0.8) 100%);
+      rgba(0,0,0,0.9) 100%);
     z-index: 2;
-    -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
-    mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    /* Long, gentle fades on both top and bottom so the vignette gradually
+       fades into the neighbouring sections rather than cutting off sharply. */
+    -webkit-mask-image: linear-gradient(180deg,
+      transparent 0%,
+      rgba(0,0,0,0.3) 10%,
+      #000 28%,
+      #000 72%,
+      rgba(0,0,0,0.3) 90%,
+      transparent 100%);
+    mask-image: linear-gradient(180deg,
+      transparent 0%,
+      rgba(0,0,0,0.3) 10%,
+      #000 28%,
+      #000 72%,
+      rgba(0,0,0,0.3) 90%,
+      transparent 100%);
   }
 
   /* Flashlight — a bright hole in a black scrim that follows the cursor. */
@@ -173,6 +197,79 @@ const tiles = [
     .work-flash { display: none; }
     .work-tile img { filter: brightness(0.9) saturate(0.95); }
   }
+
+  /* ── Lightbox ───────────────────────────────────────── */
+  .work-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 3, 8, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 40px;
+    animation: wlbFade .28s ease both;
+  }
+  .work-lightbox[hidden] { display: none; }
+  @keyframes wlbFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .work-lightbox-img {
+    max-width: min(92vw, 1400px);
+    max-height: 88vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 16px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.7);
+    animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both;
+  }
+  @keyframes wlbZoom {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .work-lightbox-close,
+  .work-lightbox-nav {
+    position: absolute;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    cursor: pointer;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: background .2s ease, transform .2s ease, border-color .2s ease;
+    font-family: sans-serif;
+  }
+  .work-lightbox-close:hover,
+  .work-lightbox-nav:hover {
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(255,255,255,0.3);
+    transform: scale(1.05);
+  }
+  .work-lightbox-close {
+    top: 20px; right: 20px;
+    width: 44px; height: 44px;
+    font-size: 26px; line-height: 1;
+  }
+  .work-lightbox-nav {
+    top: 50%; transform: translateY(-50%);
+    width: 52px; height: 52px;
+    font-size: 30px; line-height: 1;
+  }
+  .work-lightbox-nav.prev { left: 20px; }
+  .work-lightbox-nav.next { right: 20px; }
+  .work-lightbox-nav:hover { transform: translateY(-50%) scale(1.05); }
+  @media (max-width: 700px) {
+    .work-lightbox { padding: 12px; }
+    .work-lightbox-close { width: 38px; height: 38px; font-size: 22px; }
+    .work-lightbox-nav { width: 42px; height: 42px; font-size: 24px; }
+    .work-lightbox-nav.prev { left: 10px; }
+    .work-lightbox-nav.next { right: 10px; }
+  }
 </style>
 
 <script>
@@ -193,4 +290,52 @@ const tiles = [
       flash.style.setProperty('--fy', `${e.clientY - r.top}px`);
     }, { passive: true });
   }
+
+  /* ── Lightbox — click a tile to enlarge, prev/next to cycle. ── */
+  const lb      = document.querySelector<HTMLElement>('[data-work-lightbox]');
+  const lbImg   = document.querySelector<HTMLImageElement>('[data-work-lightbox-img]');
+  const lbClose = document.querySelector<HTMLElement>('[data-work-lightbox-close]');
+  const lbPrev  = document.querySelector<HTMLElement>('[data-work-lightbox-prev]');
+  const lbNext  = document.querySelector<HTMLElement>('[data-work-lightbox-next]');
+  const workTiles = Array.from(document.querySelectorAll<HTMLElement>('.work-tile'));
+  const workSrcs  = workTiles.map(t => t.dataset.src || (t.querySelector('img')?.src ?? ''));
+
+  let lbIndex = -1;
+  const showAt = (i: number) => {
+    if (!lb || !lbImg || workSrcs.length === 0) return;
+    lbIndex = (i + workSrcs.length) % workSrcs.length;
+    lbImg.src = workSrcs[lbIndex];
+    // Retrigger the zoom animation each time we swap the src
+    lbImg.style.animation = 'none';
+    void lbImg.offsetWidth;
+    lbImg.style.animation = '';
+  };
+  const openAt = (i: number) => {
+    if (!lb) return;
+    showAt(i);
+    lb.hidden = false;
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+  const closeLb = () => {
+    if (!lb) return;
+    lb.hidden = true;
+    lb.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    lbIndex = -1;
+  };
+
+  workTiles.forEach((tile, i) => {
+    tile.addEventListener('click', () => openAt(i));
+  });
+  lbClose?.addEventListener('click', closeLb);
+  lb?.addEventListener('click', (e) => { if (e.target === lb) closeLb(); });
+  lbPrev?.addEventListener('click', (e) => { e.stopPropagation(); showAt(lbIndex - 1); });
+  lbNext?.addEventListener('click', (e) => { e.stopPropagation(); showAt(lbIndex + 1); });
+  document.addEventListener('keydown', (e) => {
+    if (!lb || lb.hidden) return;
+    if (e.key === 'Escape') closeLb();
+    else if (e.key === 'ArrowLeft')  showAt(lbIndex - 1);
+    else if (e.key === 'ArrowRight') showAt(lbIndex + 1);
+  });
 </script>
