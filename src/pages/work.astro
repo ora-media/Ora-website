@@ -26,6 +26,11 @@ const SLIDE_COUNT = 4;
 const SLOTS_PER_SLIDE = 11;
 const initialSlide = 1;
 
+// Videos are served from Cloudflare R2 in production (Cloudflare Pages
+// caps deploy assets at 25 MiB). Set PUBLIC_MEDIA_BASE in the Pages env
+// (e.g. https://pub-xxxx.r2.dev). Empty falls back to local /videos.
+const MEDIA_BASE = import.meta.env.PUBLIC_MEDIA_BASE ?? '';
+
 // Automotive photography — 3 slides with per-slide mosaic layouts derived from
 // the source PSD pages. Slide 1 = Corvette (9 tiles), Slide 2 = Porsche GT3
 // (12 tiles), Slide 3 = KTM off-road (13 tiles).
@@ -68,7 +73,7 @@ const schoolsSlides = [
   <section class="work-hero">
     <video
       class="work-hero-video"
-      src="/videos/work-hero.mp4"
+      src={`${MEDIA_BASE}/videos/work-hero.mp4`}
       autoplay
       muted
       loop
@@ -393,7 +398,7 @@ const schoolsSlides = [
         {Array.from({length: videoCount}).map((_, i) => (
           <div class={`video-tile v-tile-${i+1}`}>
             <video
-              src={`/images/work/video/${i+1}.mp4`}
+              src={`${MEDIA_BASE}/images/work/video/${i+1}.mp4`}
               autoplay
               muted
               loop
