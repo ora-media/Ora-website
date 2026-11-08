@@ -4,10 +4,8 @@ import OraLogo from './OraLogo.astro';
 // to a dedicated page ("href"). Labels/order stay identical either way.
 const items = [
   { id: 'who',     label: 'Who We Are',   type: 'scroll' as const },
-  { id: 'problem', label: 'The Problem',  type: 'scroll' as const },
   { id: 'do',      label: 'What We Do',   type: 'scroll' as const },
   { id: 'work',    label: 'Work',         type: 'href'   as const, href: '/work' },
-  { id: 'about',   label: 'About',        type: 'scroll' as const },
 ];
 const currentPath = Astro.url.pathname;
 ---
