@@ -215,12 +215,17 @@ const objects = [
     .hero-copy { padding: 120px 22px 0; }
     .hero-title { font-size: clamp(36px, 9vw, 60px); letter-spacing: -1px; white-space: normal; }
     .hero-sub { font-size: clamp(14px, 3.5vw, 16px); margin-top: 22px; max-width: 92%; }
-    .hero-mascot { right: -2%; width: 72vw; bottom: -8%; }
+    /* Centered astronaut sitting on the planet arc, like desktop. 62vw wide
+       ⇒ 19vw on either side ⇒ right:19vw centers it horizontally. */
+    .hero-mascot { right: 19vw; width: 62vw; bottom: 2%; }
+    .hero-o { bottom: -4%; }
     .hero-obj { transform: scale(0.6) !important; }
   }
   @media (max-width: 480px) {
     .hero-obj { display: none; }
     .hero-copy { padding: 110px 18px 0; }
+    /* 66vw wide ⇒ 17vw on each side. */
+    .hero-mascot { right: 17vw; width: 66vw; bottom: 4%; }
   }
 </style>
 
