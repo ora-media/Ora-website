@@ -35,10 +35,17 @@
   .ora-modal[hidden] { display: none; }
   .ora-modal-panel {
     width: 100%; max-width: 520px; padding: 44px;
+    max-height: calc(100vh - 32px); overflow-y: auto;
     border-radius: 24px;
     background: radial-gradient(120% 100% at 0% 0%, rgba(223,84,53,0.14), transparent 55%), linear-gradient(180deg,#161311,#0c0a08);
     border: 1px solid rgba(255,255,255,0.1);
     box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+  }
+  @media (max-width: 600px) {
+    .ora-modal { padding: 16px; }
+    .ora-modal-panel { padding: 28px 22px; border-radius: 20px; }
+    .ora-modal-head h3 { font-size: 26px; }
+    .ora-modal-lead { font-size: 14px; margin-bottom: 20px; }
   }
   .ora-modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
   .ora-modal-head h3 {

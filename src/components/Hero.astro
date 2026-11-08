@@ -214,9 +214,13 @@ const objects = [
     .hero-scroll { height: 200vh; }
     .hero-copy { padding: 120px 22px 0; }
     .hero-title { font-size: clamp(36px, 9vw, 60px); letter-spacing: -1px; white-space: normal; }
-    .hero-sub { font-size: 15px; margin-top: 22px; max-width: 92%; }
+    .hero-sub { font-size: clamp(14px, 3.5vw, 16px); margin-top: 22px; max-width: 92%; }
     .hero-mascot { right: -2%; width: 72vw; bottom: -8%; }
     .hero-obj { transform: scale(0.6) !important; }
+  }
+  @media (max-width: 480px) {
+    .hero-obj { display: none; }
+    .hero-copy { padding: 110px 18px 0; }
   }
 </style>
 

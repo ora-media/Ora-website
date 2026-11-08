@@ -1220,7 +1220,8 @@ const schoolsSlides = [
     .slider-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; }
     .slider-arrow-left  { left: 6px; }
     .slider-arrow-right { right: 6px; }
-    .photo-grid {
+    .photo-grid,
+    .photo-grid[data-slide] {
       aspect-ratio: auto;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: repeat(6, 160px);
@@ -1518,6 +1519,9 @@ const schoolsSlides = [
   @media (max-width: 900px) {
     .video-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   }
+  @media (max-width: 480px) {
+    .video-grid { grid-template-columns: 1fr; gap: 10px; }
+  }
 
   /* ─────────────────────────────────────────────────────────────
      SOCIAL MEDIA GRID — 4-column mosaic mirroring the source layout
@@ -1601,6 +1605,10 @@ const schoolsSlides = [
   }
   @media (max-width: 1100px) and (min-width: 901px) {
     .social-mosaic { column-count: 3; }
+  }
+  @media (max-width: 480px) {
+    .social-mosaic { column-count: 1; column-gap: 0; }
+    .social-tile { margin-bottom: 14px; }
   }
 
   /* ─────────────────────────────────────────────────────────────
