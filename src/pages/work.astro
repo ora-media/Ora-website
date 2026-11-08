@@ -44,16 +44,20 @@ const automotiveSlides = [
 const PRODUCTS_SLIDE_COUNT = 3;
 const PRODUCTS_SLOTS = 11;
 
-// Real-estate photography — 6 slides. Slides 1-4 and 6 use the standard
-// 11-slot mosaic (6 sq, 2 wide, 3 tall); slide 5 uses a custom 3-column
-// magazine layout with 7 portrait tiles of varying heights.
+// Real-estate photography — 4 slides, standard 11-slot mosaic
+// (6 sq, 2 wide, 3 tall).
 const realEstateSlides = [
   { kind: 'std' as const, slots: 11 },
   { kind: 'std' as const, slots: 11 },
   { kind: 'std' as const, slots: 11 },
   { kind: 'std' as const, slots: 11 },
-  { kind: 'p5'  as const, slots: 7  },
+];
+
+// Hospitality photography — 2 slides. Slide 1 standard 11-slot mosaic,
+// slide 2 custom 3-column magazine layout with 7 portrait tiles.
+const hospitalitySlides = [
   { kind: 'std' as const, slots: 11 },
+  { kind: 'p5'  as const, slots: 7  },
 ];
 
 // Schools photography — 3 slides. Slots per slide vary; tiles are display-only
@@ -285,6 +289,89 @@ const schoolsSlides = [
           <button
             class={`slider-dot ${i === 0 ? 'is-active' : ''}`}
             data-re-goto={i + 1}
+            aria-label={`Go to slide ${i + 1}`}
+          ></button>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PHOTOGRAPHY — HOSPITALITY ═══════════════════ -->
+  <section class="cat-section" data-photo-section="hospitality" hidden>
+    <div class="container">
+      <h2 class="cat-title" style="color:#fff;font-size:52px;font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
+      <p class="cat-sub" style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Hospitality</p>
+
+      <div class="photo-slider" data-hosp-slider data-slide-count={hospitalitySlides.length}>
+        <button class="slider-arrow slider-arrow-left" data-hosp-prev aria-label="Previous slide">
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="re-grid-wrap" data-hosp-grid-wrap>
+          {hospitalitySlides.map((cfg, idx) => (
+            <div
+              class={`re-grid re-grid-${cfg.kind} ${idx === 0 ? 'is-active' : ''}`}
+              data-hosp-slide={idx + 1}
+            >
+              {cfg.kind === 'std' ? (
+                Array.from({ length: cfg.slots }, (_, i) => i + 1).map((n) => (
+                  <div class={`re-tile re-tile-${n}`} style={`grid-area: p${n};`}>
+                    <img
+                      src={`/images/work/photography/hospitality/slide${idx + 1}/${n}.jpg`}
+                      alt={`Hospitality slide ${idx + 1} photo ${n}`}
+                      loading="lazy"
+                      onerror="this.style.display='none'"
+                    />
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div class="re5-col">
+                    {[1, 2].map((n) => (
+                      <div class="re-tile" style={`aspect-ratio: 1615 / ${n === 1 ? 2474 : 2483};`}>
+                        <img src={`/images/work/photography/hospitality/slide${idx + 1}/${n}.jpg`} alt={`Hospitality slide ${idx + 1} photo ${n}`} loading="lazy" onerror="this.style.display='none'" />
+                      </div>
+                    ))}
+                  </div>
+                  <div class="re5-col">
+                    <div class="re-tile" style="aspect-ratio: 1615 / 3385;">
+                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/3.jpg`} alt={`Hospitality slide ${idx + 1} photo 3`} loading="lazy" onerror="this.style.display='none'" />
+                    </div>
+                    <div class="re-tile" style="aspect-ratio: 1615 / 2161;">
+                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/4.jpg`} alt={`Hospitality slide ${idx + 1} photo 4`} loading="lazy" onerror="this.style.display='none'" />
+                    </div>
+                  </div>
+                  <div class="re5-col">
+                    <div class="re-tile" style="aspect-ratio: 1615 / 1969;">
+                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/5.jpg`} alt={`Hospitality slide ${idx + 1} photo 5`} loading="lazy" onerror="this.style.display='none'" />
+                    </div>
+                    <div class="re-tile" style="aspect-ratio: 1615 / 3385;">
+                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/6.jpg`} alt={`Hospitality slide ${idx + 1} photo 6`} loading="lazy" onerror="this.style.display='none'" />
+                    </div>
+                    <div class="re-tile" style="aspect-ratio: 1 / 1;">
+                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/7.jpg`} alt={`Hospitality slide ${idx + 1} photo 7`} loading="lazy" onerror="this.style.display='none'" />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button class="slider-arrow slider-arrow-right" data-hosp-next aria-label="Next slide">
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="slider-dots" data-hosp-dots>
+        {hospitalitySlides.map((_, i) => (
+          <button
+            class={`slider-dot ${i === 0 ? 'is-active' : ''}`}
+            data-hosp-goto={i + 1}
             aria-label={`Go to slide ${i + 1}`}
           ></button>
         ))}
@@ -730,6 +817,28 @@ const schoolsSlides = [
     ?.addEventListener('click', () => goToReSlide(reSlide + 1));
   for (const d of reDots) {
     d.addEventListener('click', () => goToReSlide(parseInt(d.dataset.reGoto || '1', 10)));
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     HOSPITALITY PHOTO SLIDER — reuses the real-estate mosaic styles.
+     ═══════════════════════════════════════════════════════════════════ */
+  const hospGrids = Array.from(document.querySelectorAll<HTMLElement>('[data-hosp-slide]'));
+  const hospDots  = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-hosp-goto]'));
+  const HOSP_COUNT = hospGrids.length;
+  let hospSlide = 1;
+  const goToHospSlide = (n: number) => {
+    const target = ((n - 1 + HOSP_COUNT) % HOSP_COUNT) + 1;
+    if (target === hospSlide) return;
+    hospSlide = target;
+    for (const g of hospGrids) g.classList.toggle('is-active', parseInt(g.dataset.hospSlide || '0', 10) === hospSlide);
+    for (const d of hospDots)  d.classList.toggle('is-active', parseInt(d.dataset.hospGoto || '0', 10) === hospSlide);
+  };
+  document.querySelector<HTMLButtonElement>('[data-hosp-prev]')
+    ?.addEventListener('click', () => goToHospSlide(hospSlide - 1));
+  document.querySelector<HTMLButtonElement>('[data-hosp-next]')
+    ?.addEventListener('click', () => goToHospSlide(hospSlide + 1));
+  for (const d of hospDots) {
+    d.addEventListener('click', () => goToHospSlide(parseInt(d.dataset.hospGoto || '1', 10)));
   }
 
   /* ═══════════════════════════════════════════════════════════════════
