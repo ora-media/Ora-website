@@ -321,16 +321,23 @@ const SNAKE_D = `M 540 -60
   /* ── Mobile — collapse to a stacked list ───────────────── */
   @media (max-width: 780px) {
     .hw { padding: 90px 0 60px; }
-    .hw-stage { aspect-ratio: auto; height: auto; padding: 20px 22px 40px; max-width: 100%; }
+    .hw-head { padding: 40px 22px 0; }
+    .hw-sun { width: 110px; height: 110px; transform: translate(-50%, -50%); }
+    .hw-sun-halo { width: 220px; height: 220px; transform: translate(-50%, -50%); }
+    .hw-stage { aspect-ratio: auto; height: auto; padding: 32px 22px 40px; max-width: 100%; margin-top: 20px; }
     .hw-svg { display: none; }
-    .hw-stop {
+    .hw-stop,
+    .hw-stop-left,
+    .hw-stop-right {
       position: relative; left: 0 !important; top: 0 !important;
       transform: none;
-      margin-bottom: 44px;
+      margin-bottom: 36px;
       max-width: 100%;
+      text-align: left;
     }
-    .hw-stop-title { color: #ff9d55; white-space: normal; font-size: 42px; }
-    .hw-stop-desc { color: #c9c0b6; }
+    .hw-stop-left .hw-stop-desc { margin-left: 0; }
+    .hw-stop-title { color: #ff9d55; white-space: normal; font-size: clamp(32px, 9vw, 42px); }
+    .hw-stop-desc { color: #c9c0b6; max-width: 100%; }
     .hw-outro { position: static; text-align: left; margin-top: 20px; }
   }
 </style>
