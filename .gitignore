@@ -31,3 +31,4 @@ Ora.svg
 # heavy video assets — served from Cloudflare R2, not tracked in git
 public/videos/*.mp4
 public/images/work/video/*.mp4
+*.zip
