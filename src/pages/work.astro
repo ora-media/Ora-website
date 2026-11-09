@@ -4,904 +4,319 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import GetStartedModal from '../components/GetStartedModal.astro';
 
-// Industry pills — first is inactive-looking, "Food & Beverage" is the active filter.
-const industries = [
-  { id: 'real-estate',    label: 'Real estate',      active: false },
-  { id: 'food-beverage',  label: 'Food & Beverage',  active: true  },
-  { id: 'schools',        label: 'Schools',          active: false },
-  { id: 'hospitality',    label: 'Hospitality',      active: false },
-  { id: 'automotive',     label: 'Automotive',       active: false },
-  { id: 'products',       label: 'Products',         active: false },
-];
-
-const videoCount = 8;
-const socialCount = 16;
-
-// Photography — 4 "slides", each with 11 numbered photos matching the grid
-// positions in the source layout screenshots. The grid renders 11 slots and
-// cycles the whole grid between slides so slot N always shows photo N from
-// the current slide.
-const SLIDE_COUNT = 4;
-const SLOTS_PER_SLIDE = 11;
-const initialSlide = 1;
-
-// Videos are served from Cloudflare R2 in production (Cloudflare Pages
-// caps deploy assets at 25 MiB). Set PUBLIC_MEDIA_BASE in the Pages env
-// (e.g. https://pub-xxxx.r2.dev). Empty falls back to local /videos.
+// Videos are served from Cloudflare R2 in production (PUBLIC_MEDIA_BASE).
 const MEDIA_BASE = import.meta.env.PUBLIC_MEDIA_BASE ?? '';
 
-// Automotive photography — 3 slides with per-slide mosaic layouts derived from
-// the source PSD pages. Slide 1 = Corvette (9 tiles), Slide 2 = Porsche GT3
-// (12 tiles), Slide 3 = KTM off-road (13 tiles).
-const automotiveSlides = [
-  { slots: 9,  cols: 4, rows: 4 },
-  { slots: 12, cols: 4, rows: 3 },
-  { slots: 13, cols: 3, rows: 5 },
+type Medium = 'photo' | 'video' | 'social';
+type Item = { src: string; type: Medium; ind: string; title: string; desc?: string; noExpand?: boolean };
+
+const industries = [
+  { id: 'real-estate',   label: 'Real estate' },
+  { id: 'food-beverage', label: 'Food & Beverage' },
+  { id: 'schools',       label: 'Schools' },
+  { id: 'hospitality',   label: 'Hospitality' },
+  { id: 'automotive',    label: 'Automotive' },
+  { id: 'products',      label: 'Products' },
+];
+const indLabel = Object.fromEntries(industries.map(i => [i.id, i.label]));
+const media = [
+  { id: 'all',    label: 'All Work' },
+  { id: 'photo',  label: 'Photography' },
+  { id: 'video',  label: 'Videography' },
+  { id: 'social', label: 'Social Media' },
+];
+const medLabel: Record<Medium, string> = { photo: 'Photography', video: 'Videography', social: 'Social Media' };
+
+const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+const photoSet = (dir: string, slots: number[], ind: string, titles?: string[], noExpand = false): Item[] =>
+  slots.flatMap((count, s) => range(count).map(k => ({
+    src: `/images/work/photography/${dir}slide${s + 1}/${k}.jpg`, type: 'photo' as const, ind,
+    title: titles?.[s] ?? indLabel[ind], noExpand,
+  })));
+
+const social = [
+  { id: 'mahrouseh', title: 'Mahrouseh', desc: "Mahrouseh is a Syrian restaurant based in Sharjah, UAE. We've been managing its social media presence for over two years, creating content that reflects the authenticity of Syrian cuisine while building a strong and engaging online community. Through a consistent content strategy and creative storytelling, we've helped strengthen the brand's digital presence and connect with a wider audience." },
+  { id: 'mandi',     title: 'Mandi Street', desc: "Mandi Street brings traditional Yemeni mandi to a modern audience. We craft its social content across campaigns and everyday posts — from bold promo creatives to appetite-driving lifestyle imagery — building a distinctive voice that keeps the brand top-of-mind." },
 ];
 
-// Products photography — 3 slides, each 11 tiles matching the shared PSD mosaic
-// (2 wides, 3 talls, 6 squares). Reuses the existing 11-slot photo grid layout.
-const PRODUCTS_SLIDE_COUNT = 3;
-const PRODUCTS_SLOTS = 11;
-
-// Real-estate photography — 4 slides, standard 11-slot mosaic
-// (6 sq, 2 wide, 3 tall).
-const realEstateSlides = [
-  { kind: 'std' as const, slots: 11 },
-  { kind: 'std' as const, slots: 11 },
-  { kind: 'std' as const, slots: 11 },
-  { kind: 'std' as const, slots: 11 },
+// Groups are interleaved round-robin so "All Work" reads as a varied wall.
+const groups: Item[][] = [
+  photoSet('', [11, 11, 11, 11], 'food-beverage'),
+  photoSet('automotive/', [9, 12, 13], 'automotive', ['Corvette', 'Porsche GT3', 'KTM Off-road']),
+  range(8).map(n => ({ src: `${MEDIA_BASE}/images/work/video/${n}.mp4`, type: 'video' as const, ind: 'food-beverage', title: 'Food & Beverage' })),
+  photoSet('real-estate/', [11, 11, 11, 11], 'real-estate'),
+  social.flatMap(c => range(16).map(n => ({ src: `/images/work/social/${c.id}/${n}.jpg`, type: 'social' as const, ind: 'food-beverage', title: c.title, desc: c.desc }))),
+  photoSet('hospitality/', [11, 7], 'hospitality'),
+  photoSet('products/', [11, 11, 11], 'products'),
+  photoSet('schools/', [11, 9, 3], 'schools', ['Graduation', 'Graduation', 'Graduation'], true),
 ];
-
-// Hospitality photography — 2 slides. Slide 1 standard 11-slot mosaic,
-// slide 2 custom 3-column magazine layout with 7 portrait tiles.
-const hospitalitySlides = [
-  { kind: 'std' as const, slots: 11 },
-  { kind: 'p5'  as const, slots: 7  },
-];
-
-// Schools photography — 3 slides. Slots per slide vary; tiles are display-only
-// (no click/expand affordance).
-const schoolsSlides = [
-  { slots: 11 }, // Pag 1 — male graduate mosaic
-  { slots: 9 },  // Pag 2 — female graduate mosaic
-  { slots: 3 },  // Pag 3 — three stacked group photos
-];
+const items: Item[] = [];
+for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if (i < g.length) items.push(g[i]);
 ---
 <BaseLayout title="Work — Ora Digital Media">
   <div class="work-page-bg" aria-hidden="true"></div>
   <Nav />
 
-  <!-- ═══════════════════ HERO VIDEO ═══════════════════ -->
-  <section class="work-hero">
-    <video
-      class="work-hero-video"
-      src={`${MEDIA_BASE}/videos/work-hero.mp4`}
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="auto"
-      data-hero-video
-    ></video>
-    <button
-      type="button"
-      class="work-hero-mute"
-      data-hero-mute
-      aria-label="Unmute video"
-      aria-pressed="true"
-    >
-      <svg class="icon-muted" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
-        <path d="M16 8l6 8M22 8l-6 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-      </svg>
-      <svg class="icon-unmuted" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
-        <path d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-        <path d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-      </svg>
+  <!-- ═══════════ HERO REEL (full-bleed) ═══════════ -->
+  <section class="w-hero">
+    <video class="w-hero-video" src={`${MEDIA_BASE}/videos/work-hero.mp4`} autoplay muted loop playsinline preload="auto" data-hero-video></video>
+    <div class="w-hero-shade" aria-hidden="true"></div>
+    <h1 class="w-hero-title">Work</h1>
+    <button type="button" class="w-round-btn w-hero-mute" data-hero-mute aria-label="Unmute video" aria-pressed="true">
+      <svg class="icon-muted" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <svg class="icon-unmuted" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
     </button>
   </section>
 
-  <!-- ═══════════════════ INDUSTRY PILLS ═══════════════════ -->
-  <nav class="industries" aria-label="Industries">
-    <div class="industries-inner container">
-      {industries.map(it => (
-        <button class={`industry-pill ${it.active ? 'is-active' : ''}`} data-id={it.id}>
-          {it.label}
+  <!-- ═══════════ FILTERS ═══════════ -->
+  <div class="w-filters container">
+    <div class="w-tabs w-scroll" role="tablist" aria-label="Medium">
+      {media.map((m, i) => (
+        <button type="button" role="tab" class={`w-tab ${i === 0 ? 'is-active' : ''}`} data-med={m.id} aria-selected={i === 0 ? 'true' : 'false'}>
+          {m.label}<span class="w-tab-hint">Food &amp; Beverage only</span>
         </button>
       ))}
     </div>
-  </nav>
-
-  <!-- ═══════════════════ PHOTOGRAPHY — FOOD & BEVERAGE ═══════════════════ -->
-  <section class="cat-section" data-photo-section="food-beverage">
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
-      <p class="cat-sub" data-industry-label style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Food &amp; Beverage</p>
-
-      <div class="photo-slider" data-photo-slider data-slide-count={SLIDE_COUNT}>
-        <button class="slider-arrow slider-arrow-left" data-slider-prev aria-label="Previous slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="photo-grid" data-photo-grid data-slots={SLOTS_PER_SLIDE} data-slide={initialSlide}>
-          {Array.from({ length: SLOTS_PER_SLIDE }, (_, i) => i + 1).map((n) => (
-            <div
-              class={`ph-tile ph-tile-${n}`}
-              style={`grid-area: p${n};`}
-              data-slot={n}
-            >
-              {/* Two stacked <img> layers cross-fade when the slide changes. */}
-              <img class="ph-layer is-active" src={`/images/work/photography/slide${initialSlide}/${n}.jpg`} alt={`Photography ${n}`} onerror="this.style.display='none'" />
-              <img class="ph-layer" alt="" aria-hidden="true" />
-              <span class="tile-label">Photo {n}</span>
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-slider-next aria-label="Next slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="slider-dots" data-slider-dots>
-        {Array.from({ length: SLIDE_COUNT }, (_, i) => i + 1).map((n) => (
-          <button
-            class={`slider-dot ${n === initialSlide ? 'is-active' : ''}`}
-            data-slider-goto={n}
-            aria-label={`Go to slide ${n}`}
-          ></button>
+    <div class="w-chiprow">
+      <div class="w-chips w-scroll" aria-label="Industry">
+        <button type="button" class="w-chip is-active" data-ind="all" aria-pressed="true">All</button>
+        {industries.map(it => (
+          <button type="button" class="w-chip" data-ind={it.id} aria-pressed="false">{it.label}</button>
         ))}
       </div>
+      <span class="w-count" data-count></span>
     </div>
-  </section>
+  </div>
 
-  <!-- ═══════════════════ PHOTOGRAPHY — AUTOMOTIVE ═══════════════════ -->
-  <section class="cat-section" data-photo-section="automotive" hidden>
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
-      <p class="cat-sub" style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Automotive</p>
-
-      <div class="photo-slider" data-auto-slider data-slide-count={automotiveSlides.length}>
-        <button class="slider-arrow slider-arrow-left" data-auto-prev aria-label="Previous slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="auto-grid-wrap" data-auto-grid-wrap>
-          {automotiveSlides.map((cfg, idx) => (
-            <div
-              class={`auto-grid auto-grid-${idx + 1} ${idx === 0 ? 'is-active' : ''}`}
-              data-auto-slide={idx + 1}
-            >
-              {Array.from({ length: cfg.slots }, (_, i) => i + 1).map((n) => (
-                <div class={`auto-tile a-tile-${n}`} style={`grid-area: a${n};`}>
-                  <img
-                    src={`/images/work/photography/automotive/slide${idx + 1}/${n}.jpg`}
-                    alt={`Automotive slide ${idx + 1} photo ${n}`}
-                    loading="lazy"
-                    onerror="this.style.display='none'"
-                  />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-auto-next aria-label="Next slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="slider-dots" data-auto-dots>
-        {automotiveSlides.map((_, i) => (
-          <button
-            class={`slider-dot ${i === 0 ? 'is-active' : ''}`}
-            data-auto-goto={i + 1}
-            aria-label={`Go to slide ${i + 1}`}
-          ></button>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════ PHOTOGRAPHY — REAL ESTATE ═══════════════════ -->
-  <section class="cat-section" data-photo-section="real-estate" hidden>
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
-      <p class="cat-sub" style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Real estate</p>
-
-      <div class="photo-slider" data-re-slider data-slide-count={realEstateSlides.length}>
-        <button class="slider-arrow slider-arrow-left" data-re-prev aria-label="Previous slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="re-grid-wrap" data-re-grid-wrap>
-          {realEstateSlides.map((cfg, idx) => (
-            <div
-              class={`re-grid re-grid-${cfg.kind} ${idx === 0 ? 'is-active' : ''}`}
-              data-re-slide={idx + 1}
-            >
-              {cfg.kind === 'std' ? (
-                Array.from({ length: cfg.slots }, (_, i) => i + 1).map((n) => (
-                  <div class={`re-tile re-tile-${n}`} style={`grid-area: p${n};`}>
-                    <img
-                      src={`/images/work/photography/real-estate/slide${idx + 1}/${n}.jpg`}
-                      alt={`Real estate slide ${idx + 1} photo ${n}`}
-                      loading="lazy"
-                      onerror="this.style.display='none'"
-                    />
-                  </div>
-                ))
-              ) : (
-                <>
-                  <div class="re5-col">
-                    {[1, 2].map((n) => (
-                      <div class="re-tile" style={`aspect-ratio: 1615 / ${n === 1 ? 2474 : 2483};`}>
-                        <img src={`/images/work/photography/real-estate/slide${idx + 1}/${n}.jpg`} alt={`Real estate slide ${idx + 1} photo ${n}`} loading="lazy" onerror="this.style.display='none'" />
-                      </div>
-                    ))}
-                  </div>
-                  <div class="re5-col">
-                    <div class="re-tile" style="aspect-ratio: 1615 / 3385;">
-                      <img src={`/images/work/photography/real-estate/slide${idx + 1}/3.jpg`} alt={`Real estate slide ${idx + 1} photo 3`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                    <div class="re-tile" style="aspect-ratio: 1615 / 2161;">
-                      <img src={`/images/work/photography/real-estate/slide${idx + 1}/4.jpg`} alt={`Real estate slide ${idx + 1} photo 4`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                  </div>
-                  <div class="re5-col">
-                    <div class="re-tile" style="aspect-ratio: 1615 / 1969;">
-                      <img src={`/images/work/photography/real-estate/slide${idx + 1}/5.jpg`} alt={`Real estate slide ${idx + 1} photo 5`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                    <div class="re-tile" style="aspect-ratio: 1615 / 3385;">
-                      <img src={`/images/work/photography/real-estate/slide${idx + 1}/6.jpg`} alt={`Real estate slide ${idx + 1} photo 6`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                    <div class="re-tile" style="aspect-ratio: 1 / 1;">
-                      <img src={`/images/work/photography/real-estate/slide${idx + 1}/7.jpg`} alt={`Real estate slide ${idx + 1} photo 7`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-re-next aria-label="Next slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="slider-dots" data-re-dots>
-        {realEstateSlides.map((_, i) => (
-          <button
-            class={`slider-dot ${i === 0 ? 'is-active' : ''}`}
-            data-re-goto={i + 1}
-            aria-label={`Go to slide ${i + 1}`}
-          ></button>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════ PHOTOGRAPHY — HOSPITALITY ═══════════════════ -->
-  <section class="cat-section" data-photo-section="hospitality" hidden>
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
-      <p class="cat-sub" style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Hospitality</p>
-
-      <div class="photo-slider" data-hosp-slider data-slide-count={hospitalitySlides.length}>
-        <button class="slider-arrow slider-arrow-left" data-hosp-prev aria-label="Previous slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="re-grid-wrap" data-hosp-grid-wrap>
-          {hospitalitySlides.map((cfg, idx) => (
-            <div
-              class={`re-grid re-grid-${cfg.kind} ${idx === 0 ? 'is-active' : ''}`}
-              data-hosp-slide={idx + 1}
-            >
-              {cfg.kind === 'std' ? (
-                Array.from({ length: cfg.slots }, (_, i) => i + 1).map((n) => (
-                  <div class={`re-tile re-tile-${n}`} style={`grid-area: p${n};`}>
-                    <img
-                      src={`/images/work/photography/hospitality/slide${idx + 1}/${n}.jpg`}
-                      alt={`Hospitality slide ${idx + 1} photo ${n}`}
-                      loading="lazy"
-                      onerror="this.style.display='none'"
-                    />
-                  </div>
-                ))
-              ) : (
-                <>
-                  <div class="re5-col">
-                    {[1, 2].map((n) => (
-                      <div class="re-tile" style={`aspect-ratio: 1615 / ${n === 1 ? 2474 : 2483};`}>
-                        <img src={`/images/work/photography/hospitality/slide${idx + 1}/${n}.jpg`} alt={`Hospitality slide ${idx + 1} photo ${n}`} loading="lazy" onerror="this.style.display='none'" />
-                      </div>
-                    ))}
-                  </div>
-                  <div class="re5-col">
-                    <div class="re-tile" style="aspect-ratio: 1615 / 3385;">
-                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/3.jpg`} alt={`Hospitality slide ${idx + 1} photo 3`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                    <div class="re-tile" style="aspect-ratio: 1615 / 2161;">
-                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/4.jpg`} alt={`Hospitality slide ${idx + 1} photo 4`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                  </div>
-                  <div class="re5-col">
-                    <div class="re-tile" style="aspect-ratio: 1615 / 1969;">
-                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/5.jpg`} alt={`Hospitality slide ${idx + 1} photo 5`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                    <div class="re-tile" style="aspect-ratio: 1615 / 3385;">
-                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/6.jpg`} alt={`Hospitality slide ${idx + 1} photo 6`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                    <div class="re-tile" style="aspect-ratio: 1 / 1;">
-                      <img src={`/images/work/photography/hospitality/slide${idx + 1}/7.jpg`} alt={`Hospitality slide ${idx + 1} photo 7`} loading="lazy" onerror="this.style.display='none'" />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-hosp-next aria-label="Next slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="slider-dots" data-hosp-dots>
-        {hospitalitySlides.map((_, i) => (
-          <button
-            class={`slider-dot ${i === 0 ? 'is-active' : ''}`}
-            data-hosp-goto={i + 1}
-            aria-label={`Go to slide ${i + 1}`}
-          ></button>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════ PHOTOGRAPHY — SCHOOLS ═══════════════════ -->
-  <section class="cat-section" data-photo-section="schools" hidden>
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
-      <p class="cat-sub" style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Schools</p>
-
-      <div class="photo-slider" data-schools-slider data-slide-count={schoolsSlides.length}>
-        <button class="slider-arrow slider-arrow-left" data-schools-prev aria-label="Previous slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="schools-grid-wrap" data-schools-grid-wrap>
-          {schoolsSlides.map((cfg, idx) => (
-            <div
-              class={`schools-grid schools-grid-${idx + 1} ${idx === 0 ? 'is-active' : ''}`}
-              data-schools-slide={idx + 1}
-            >
-              {Array.from({ length: cfg.slots }, (_, i) => i + 1).map((n) => (
-                <div class={`schools-tile s-ptile-${n}`} style={`grid-area: s${n};`} data-no-expand>
-                  <img
-                    src={`/images/work/photography/schools/slide${idx + 1}/${n}.jpg`}
-                    alt={`Schools slide ${idx + 1} photo ${n}`}
-                    loading="lazy"
-                    draggable="false"
-                    onerror="this.style.display='none'"
-                  />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-schools-next aria-label="Next slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="slider-dots" data-schools-dots>
-        {schoolsSlides.map((_, i) => (
-          <button
-            class={`slider-dot ${i === 0 ? 'is-active' : ''}`}
-            data-schools-goto={i + 1}
-            aria-label={`Go to slide ${i + 1}`}
-          ></button>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════ PHOTOGRAPHY — PRODUCTS ═══════════════════ -->
-  <section class="cat-section" data-photo-section="products" hidden>
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">PHOTOGRAPHY</h2>
-      <p class="cat-sub" style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Products</p>
-
-      <div class="photo-slider" data-prod-slider data-slide-count={PRODUCTS_SLIDE_COUNT}>
-        <button class="slider-arrow slider-arrow-left" data-prod-prev aria-label="Previous slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="photo-grid" data-prod-grid data-slots={PRODUCTS_SLOTS} data-slide={1}>
-          {Array.from({ length: PRODUCTS_SLOTS }, (_, i) => i + 1).map((n) => (
-            <div class={`ph-tile ph-tile-${n}`} style={`grid-area: p${n};`} data-slot={n}>
-              <img class="ph-layer is-active" src={`/images/work/photography/products/slide1/${n}.jpg`} alt={`Products ${n}`} onerror="this.style.display='none'" />
-              <img class="ph-layer" alt="" aria-hidden="true" />
-              <span class="tile-label">Photo {n}</span>
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-prod-next aria-label="Next slide">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="slider-dots" data-prod-dots>
-        {Array.from({ length: PRODUCTS_SLIDE_COUNT }, (_, i) => i + 1).map((n) => (
-          <button
-            class={`slider-dot ${n === 1 ? 'is-active' : ''}`}
-            data-prod-goto={n}
-            aria-label={`Go to slide ${n}`}
-          ></button>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════ VIDEOGRAPHY ═══════════════════ -->
-  <section class="cat-section">
-    <div class="container">
-      <h2 class="cat-title" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 8px;padding:0;background:transparent;letter-spacing:1px;">VIDEOGRAPHY</h2>
-      <p class="cat-sub" data-industry-label style="color:#e4d9cb;font-size:15px;text-align:center;margin:0 0 40px;">Food &amp; Beverage</p>
-
-      <div class="video-grid">
-        {Array.from({length: videoCount}).map((_, i) => (
-          <div class={`video-tile v-tile-${i+1}`}>
-            <video
-              src={`${MEDIA_BASE}/images/work/video/${i+1}.mp4`}
-              autoplay
-              muted
-              loop
-              playsinline
-              preload="metadata"
-              onerror="this.style.display='none'"
-            ></video>
-            <svg viewBox="0 0 100 100" class="video-play" aria-hidden="true">
-              <path d="M38 30 L74 50 L38 70 Z" fill="rgba(0,0,0,0.4)" />
-            </svg>
-            <span class="tile-label tile-label-dark">Video {i+1}</span>
+  <!-- ═══════════ MASONRY ═══════════ -->
+  <section class="w-gallery container">
+    <div class="w-masonry" data-masonry>
+      {items.map((it, i) => (
+        <figure
+          class={`g-tile ${it.noExpand ? 'no-expand' : ''}`}
+          data-type={it.type}
+          data-ind={it.ind}
+          data-title={it.title}
+          data-cat={`${indLabel[it.ind]} · ${medLabel[it.type]}`}
+          data-desc={it.desc ?? ''}
+          data-src={it.src}
+          tabindex={it.noExpand ? undefined : 0}
+          role={it.noExpand ? undefined : 'button'}
+          aria-label={it.noExpand ? undefined : `Open ${it.title}`}
+        >
+          <div class="g-media">
+            {it.type === 'video' ? (
+              <>
+                <video src={`${it.src}#t=0.1`} muted loop playsinline preload="metadata" onerror="this.closest('.g-tile').dataset.broken=''"></video>
+                <span class="g-badge"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>Video</span>
+                <span class="g-progress" aria-hidden="true"></span>
+              </>
+            ) : (
+              <img src={it.src} alt={`${it.title} — ${medLabel[it.type]}`} loading={i < 12 ? 'eager' : 'lazy'} decoding="async" draggable="false" onerror="this.closest('.g-tile').dataset.broken=''" />
+            )}
+            <figcaption class="g-cap g-cap-over">
+              <span class="g-title">{it.title}</span>
+              <span class="g-cat">{indLabel[it.ind]} · {medLabel[it.type]}</span>
+            </figcaption>
           </div>
-        ))}
-      </div>
+          <div class="g-cap g-cap-below" aria-hidden="true">
+            <span class="g-title">{it.title}</span>
+            <span class="g-cat">{indLabel[it.ind]} · {medLabel[it.type]}</span>
+          </div>
+        </figure>
+      ))}
     </div>
   </section>
 
-  <!-- ═══════════════════ SOCIAL MEDIA ═══════════════════ -->
-  <section class="cat-section">
-    <div class="container">
-      <h2 class="cat-title cat-title-plain" style="color:#fff;font-size:clamp(28px, 9vw, 52px);font-weight:700;text-align:center;margin:0 0 44px;padding:0;background:transparent;letter-spacing:1px;">Social Media</h2>
-
-      <div class="social-slider" data-social-slider>
-        <button class="slider-arrow slider-arrow-left" data-social-prev aria-label="Previous client">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-
-        <div class="social-slides" data-social-slides>
-          {[
-            { id: 'mahrouseh', title: 'Mahrouseh', desc: "Mahrouseh is a Syrian restaurant based in Sharjah, UAE. We've been managing its social media presence for over two years, creating content that reflects the authenticity of Syrian cuisine while building a strong and engaging online community. Through a consistent content strategy and creative storytelling, we've helped strengthen the brand's digital presence and connect with a wider audience." },
-            { id: 'mandi',     title: 'Mandi Street', desc: "Mandi Street brings traditional Yemeni mandi to a modern audience. We craft its social content across campaigns and everyday posts — from bold promo creatives to appetite-driving lifestyle imagery — building a distinctive voice that keeps the brand top-of-mind." },
-          ].map((client, idx) => (
-            <div class={`social-block ${idx === 0 ? 'is-active' : ''}`} data-social-slide={idx + 1}>
-              <h3 class="social-client-title">{client.title}</h3>
-              <div class="social-mosaic">
-                {Array.from({ length: socialCount }, (_, i) => i + 1).map((n) => (
-                  <div class={`social-tile s-tile-${n} ${n % 2 === 1 ? 'is-tall' : 'is-medium'}`}>
-                    <img src={`/images/work/social/${client.id}/${n}.jpg`} alt={`${client.title} social ${n}`} loading="lazy" onerror="this.style.display='none'" />
-                  </div>
-                ))}
-              </div>
-              <p class="social-desc">{client.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <button class="slider-arrow slider-arrow-right" data-social-next aria-label="Next client">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-            <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+  <!-- ═══════════ LIGHTBOX ═══════════ -->
+  <div class="w-lb" data-lb hidden role="dialog" aria-modal="true" aria-label="Project viewer">
+    <div class="w-lb-top">
+      <span class="w-lb-pos" data-lb-pos></span>
+      <button type="button" class="w-round-btn" data-lb-close aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="w-lb-stage" data-lb-stage>
+      <div class="w-lb-media" data-lb-media></div>
+    </div>
+    <div class="w-lb-info">
+      <div class="w-lb-text">
+        <p class="w-lb-cat" data-lb-cat></p>
+        <p class="w-lb-title" data-lb-title></p>
+        <p class="w-lb-desc" data-lb-desc></p>
       </div>
-
-      <div class="slider-dots" data-social-dots>
-        {[1, 2].map((n) => (
-          <button
-            class={`slider-dot ${n === 1 ? 'is-active' : ''}`}
-            data-social-goto={n}
-            aria-label={`Go to client ${n}`}
-          ></button>
-        ))}
+      <div class="w-lb-nav">
+        <button type="button" class="w-round-btn" data-lb-prev aria-label="Previous">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="w-round-btn" data-lb-next aria-label="Next">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
-  </section>
+  </div>
 
   <Footer />
   <GetStartedModal />
 </BaseLayout>
 
 <script>
-  /* ═══════════════════════════════════════════════════════════════════
-     INDUSTRY FILTER
-     Click a pill → visually mark active, update all "Food & Beverage"
-     subtitle labels, toggle image visibility for non-F&B industries.
-     ═══════════════════════════════════════════════════════════════════ */
-  const pills  = Array.from(document.querySelectorAll<HTMLButtonElement>('.industry-pill'));
-  const labels = Array.from(document.querySelectorAll<HTMLElement>('[data-industry-label]'));
-  const page   = document.querySelector<HTMLElement>('.work-page-bg')?.parentElement;
+  /* ── Filters: medium tabs × industry chips ───────────────────────── */
+  const tiles = Array.from(document.querySelectorAll<HTMLElement>('.g-tile'));
+  const tabs  = Array.from(document.querySelectorAll<HTMLButtonElement>('.w-tab'));
+  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.w-chip'));
+  const countEl = document.querySelector<HTMLElement>('[data-count]');
+  let med = 'all', ind = 'all';
 
-  let currentIndustry = 'food-beverage';
+  const matches = (t: HTMLElement, m: string, i: string) =>
+    !('broken' in t.dataset) && (m === 'all' || t.dataset.type === m) && (i === 'all' || t.dataset.ind === i);
 
-  const applyIndustry = (id: string, label: string) => {
-    currentIndustry = id;
-    for (const p of pills) p.classList.toggle('is-active', p.dataset.id === id);
-    for (const l of labels) l.textContent = label;
-    if (page) page.setAttribute('data-industry', id);
-
-    // Toggle which photography section is visible based on industry.
-    const photoSections = document.querySelectorAll<HTMLElement>('[data-photo-section]');
-    photoSections.forEach(sec => {
-      const match = sec.dataset.photoSection === id;
-      sec.hidden = !match;
-    });
-
-    // Only F&B has curated video + social imagery; hide those for other industries.
-    const showFbMedia = id === 'food-beverage';
-    document.querySelectorAll<HTMLImageElement>('.social-tile img')
-      .forEach(img => { img.style.display = showFbMedia ? '' : 'none'; });
-    document.querySelectorAll<HTMLVideoElement>('.video-tile video')
-      .forEach(v => { v.style.display = showFbMedia ? '' : 'none'; });
-  };
-
-  for (const p of pills) {
-    p.addEventListener('click', () => {
-      const id = p.dataset.id!;
-      const label = p.textContent?.trim() || '';
-      applyIndustry(id, label);
-    });
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════
-     PHOTOGRAPHY SLIDER
-     Manual left/right navigation across 4 slides. Slot n always shows
-     photo n of the current slide. Two <img> layers per tile crossfade
-     when the slide changes.
-     ═══════════════════════════════════════════════════════════════════ */
-  const sliderEl = document.querySelector<HTMLElement>('[data-photo-slider]');
-  const photoGridEl = document.querySelector<HTMLElement>('[data-photo-grid]');
-  const SLIDE_COUNT = parseInt(sliderEl?.dataset.slideCount || '4', 10);
-  const TILE_STAGGER_MS = 60;
-  let currentSlide = 1;
-
-  type SlotState = { layers: [HTMLImageElement, HTMLImageElement]; active: 0|1; slotNum: number };
-  const slots: SlotState[] = [];
-
-  const initSlots = () => {
-    slots.length = 0;
-    const els = Array.from(document.querySelectorAll<HTMLElement>('.ph-tile[data-slot]'));
-    for (const el of els) {
-      const layers = el.querySelectorAll<HTMLImageElement>('.ph-layer');
-      if (layers.length !== 2) continue;
-      slots.push({
-        layers: [layers[0], layers[1]],
-        active: 0,
-        slotNum: parseInt(el.dataset.slot || '1', 10),
-      });
+  const apply = () => {
+    let n = 0;
+    for (const t of tiles) { const ok = matches(t, med, ind); t.hidden = !ok; if (ok) n++; }
+    for (const tab of tabs) {
+      const id = tab.dataset.med!;
+      const on = id === med;
+      tab.classList.toggle('is-active', on);
+      tab.setAttribute('aria-selected', String(on));
+      tab.classList.toggle('is-unavailable', !tiles.some(t => matches(t, id, ind)));
     }
-  };
-
-  // Preload every image for a slide; resolves when all are ready
-  // (or errored). Used to hold the flip until the new page is loaded.
-  const preloadSlide = (slide: number) => Promise.all(
-    slots.map((s) => new Promise<void>((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-      img.src = `/images/work/photography/slide${slide}/${s.slotNum}.jpg`;
-    }))
-  );
-
-  // Swap every tile's image instantly (no crossfade). Used while the
-  // grid is hidden mid-flip so the swap is invisible.
-  const swapSlideInstant = (slide: number) => {
-    if (!slots.length) initSlots();
-    for (const s of slots) {
-      const src = `/images/work/photography/slide${slide}/${s.slotNum}.jpg`;
-      s.layers[s.active].src = src;
-      s.layers[1 - s.active as 0|1].src = src;
+    for (const c of chips) {
+      const id = c.dataset.ind!;
+      const on = id === ind;
+      c.classList.toggle('is-active', on);
+      c.setAttribute('aria-pressed', String(on));
+      c.hidden = id !== 'all' && !tiles.some(t => matches(t, med, id));
     }
+    if (countEl) countEl.textContent = `${n} ${n === 1 ? 'piece' : 'pieces'}`;
   };
 
-  const dotEls = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-slider-goto]'));
-  const setActiveDot = (slide: number) => {
-    for (const d of dotEls) d.classList.toggle('is-active', parseInt(d.dataset.sliderGoto || '0', 10) === slide);
-  };
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    med = tab.dataset.med!;
+    if (!tiles.some(t => matches(t, med, ind))) ind = 'all';   // e.g. Social Media → only F&B has it
+    apply();
+  }));
+  chips.forEach(c => c.addEventListener('click', () => { ind = c.dataset.ind!; apply(); }));
+  apply();
 
-  const DISTORT_OUT_MS = 500; // must match the CSS transition duration
-  let isFlipping = false;
+  // A tile that fails to load drops out of the grid and the lightbox.
+  new MutationObserver(apply).observe(document.querySelector('[data-masonry]')!, { subtree: true, attributes: true, attributeFilter: ['data-broken'] });
 
-  const goToSlide = async (slide: number) => {
-    const target = ((slide - 1 + SLIDE_COUNT) % SLIDE_COUNT) + 1;
-    if (target === currentSlide || isFlipping) return;
-    isFlipping = true;
-
-    // Preload the new slide's photos before we even start the flip so
-    // the reveal shows the finished page, not a half-loaded one.
-    const preload = preloadSlide(target);
-
-    // Flip the grid edge-on and fade it out — the layout swap happens
-    // while it's invisible, then it flips back in on the new slide.
-    photoGridEl?.classList.add('is-swapping');
-
-    // Wait for both the flip-out animation AND the preload to finish.
-    await Promise.all([
-      new Promise<void>((r) => window.setTimeout(r, DISTORT_OUT_MS)),
-      preload,
-    ]);
-
-    // Swap invisibly.
-    currentSlide = target;
-    if (photoGridEl) photoGridEl.dataset.slide = String(currentSlide);
-    setActiveDot(currentSlide);
-    swapSlideInstant(currentSlide);
-
-    // Force a reflow so the browser commits the new src + layout
-    // before we start the flip-back-in animation.
-    void photoGridEl?.offsetWidth;
-
-    photoGridEl?.classList.remove('is-swapping');
-    window.setTimeout(() => { isFlipping = false; }, DISTORT_OUT_MS);
-  };
-
-  document.querySelector<HTMLButtonElement>('[data-slider-prev]')
-    ?.addEventListener('click', () => goToSlide(currentSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-slider-next]')
-    ?.addEventListener('click', () => goToSlide(currentSlide + 1));
-  for (const d of dotEls) {
-    d.addEventListener('click', () => goToSlide(parseInt(d.dataset.sliderGoto || '1', 10)));
-  }
-
-  // Arrow keys work when the slider (or its children) has focus.
-  sliderEl?.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); goToSlide(currentSlide - 1); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); goToSlide(currentSlide + 1); }
+  /* ── Video tiles: muted preview on hover (mouse only) ───────────── */
+  tiles.filter(t => t.dataset.type === 'video').forEach(t => {
+    const v = t.querySelector('video')!;
+    t.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { v.muted = true; v.play().catch(() => {}); t.classList.add('is-previewing'); } });
+    t.addEventListener('pointerleave', () => { v.pause(); v.currentTime = 0.1; t.classList.remove('is-previewing'); });
   });
 
-  /* ═══════════════════════════════════════════════════════════════════
-     PRODUCTS PHOTO SLIDER — mirrors the F&B slider (distortion flip + preload)
-     but keeps its own state on a separate 11-slot grid.
-     ═══════════════════════════════════════════════════════════════════ */
-  const prodSliderEl = document.querySelector<HTMLElement>('[data-prod-slider]');
-  const prodGridEl   = document.querySelector<HTMLElement>('[data-prod-grid]');
-  const PROD_COUNT   = parseInt(prodSliderEl?.dataset.slideCount || '3', 10);
-  const prodDotEls   = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-prod-goto]'));
-  let prodSlide = 1;
-  let prodFlipping = false;
+  /* ── Reveal on scroll ───────────────────────────────────────────── */
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  tiles.forEach(t => io.observe(t));
 
-  type ProdSlotState = { layers: [HTMLImageElement, HTMLImageElement]; active: 0|1; slotNum: number };
-  const prodSlots: ProdSlotState[] = [];
-  const initProdSlots = () => {
-    prodSlots.length = 0;
-    const els = Array.from(prodGridEl?.querySelectorAll<HTMLElement>('.ph-tile[data-slot]') || []);
-    for (const el of els) {
-      const layers = el.querySelectorAll<HTMLImageElement>('.ph-layer');
-      if (layers.length !== 2) continue;
-      prodSlots.push({
-        layers: [layers[0], layers[1]],
-        active: 0,
-        slotNum: parseInt(el.dataset.slot || '1', 10),
-      });
+  /* ── Lightbox ───────────────────────────────────────────────────── */
+  const lb      = document.querySelector<HTMLElement>('[data-lb]')!;
+  const stage   = document.querySelector<HTMLElement>('[data-lb-stage]')!;
+  const mediaEl = document.querySelector<HTMLElement>('[data-lb-media]')!;
+  const posEl   = document.querySelector<HTMLElement>('[data-lb-pos]')!;
+  const catEl   = document.querySelector<HTMLElement>('[data-lb-cat]')!;
+  const titleEl = document.querySelector<HTMLElement>('[data-lb-title]')!;
+  const descEl  = document.querySelector<HTMLElement>('[data-lb-desc]')!;
+  let list: HTMLElement[] = [];
+  let idx = 0;
+  let lastFocus: HTMLElement | null = null;
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const render = () => {
+    const t = list[idx]; if (!t) return;
+    const src = t.dataset.src!;
+    mediaEl.innerHTML = '';
+    if (t.dataset.type === 'video') {
+      const v = document.createElement('video');
+      Object.assign(v, { src, controls: true, autoplay: true, loop: true, playsInline: true });
+      mediaEl.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = src; img.alt = t.dataset.title || ''; img.draggable = false;
+      mediaEl.appendChild(img);
     }
+    mediaEl.classList.remove('is-in'); void mediaEl.offsetWidth; mediaEl.classList.add('is-in');
+    posEl.textContent = `${pad(idx + 1)} / ${pad(list.length)}`;
+    catEl.textContent = t.dataset.cat || '';
+    titleEl.textContent = t.dataset.title || '';
+    descEl.textContent = t.dataset.desc || '';
+    descEl.hidden = !t.dataset.desc;
+    // Preload neighbours
+    [list[idx + 1], list[idx - 1]].forEach(n => { if (n && n.dataset.type !== 'video') { const i = new Image(); i.src = n.dataset.src!; } });
   };
-  const preloadProdSlide = (slide: number) => Promise.all(
-    prodSlots.map((s) => new Promise<void>((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-      img.src = `/images/work/photography/products/slide${slide}/${s.slotNum}.jpg`;
-    }))
-  );
-  const swapProdSlideInstant = (slide: number) => {
-    if (!prodSlots.length) initProdSlots();
-    for (const s of prodSlots) {
-      const src = `/images/work/photography/products/slide${slide}/${s.slotNum}.jpg`;
-      s.layers[s.active].src = src;
-      s.layers[1 - s.active as 0|1].src = src;
-    }
+  const openAt = (t: HTMLElement) => {
+    list = tiles.filter(x => !x.hidden && !x.classList.contains('no-expand'));
+    idx = Math.max(0, list.indexOf(t));
+    lastFocus = document.activeElement as HTMLElement;
+    lb.hidden = false;
+    document.body.style.overflow = 'hidden';
+    render();
+    lb.querySelector<HTMLElement>('[data-lb-close]')?.focus();
   };
-  const setProdActiveDot = (slide: number) => {
-    for (const d of prodDotEls) d.classList.toggle('is-active', parseInt(d.dataset.prodGoto || '0', 10) === slide);
+  const close = () => {
+    lb.hidden = true; mediaEl.innerHTML = '';
+    document.body.style.overflow = '';
+    lastFocus?.focus();
   };
-  const goToProdSlide = async (slide: number) => {
-    const target = ((slide - 1 + PROD_COUNT) % PROD_COUNT) + 1;
-    if (target === prodSlide || prodFlipping) return;
-    prodFlipping = true;
-    const preload = preloadProdSlide(target);
-    prodGridEl?.classList.add('is-swapping');
-    await Promise.all([
-      new Promise<void>((r) => window.setTimeout(r, 500)),
-      preload,
-    ]);
-    prodSlide = target;
-    if (prodGridEl) prodGridEl.dataset.slide = String(prodSlide);
-    setProdActiveDot(prodSlide);
-    swapProdSlideInstant(prodSlide);
-    void prodGridEl?.offsetWidth;
-    prodGridEl?.classList.remove('is-swapping');
-    window.setTimeout(() => { prodFlipping = false; }, 500);
-  };
-  document.querySelector<HTMLButtonElement>('[data-prod-prev]')
-    ?.addEventListener('click', () => goToProdSlide(prodSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-prod-next]')
-    ?.addEventListener('click', () => goToProdSlide(prodSlide + 1));
-  for (const d of prodDotEls) {
-    d.addEventListener('click', () => goToProdSlide(parseInt(d.dataset.prodGoto || '1', 10)));
-  }
+  const step = (d: number) => { if (!list.length) return; idx = (idx + d + list.length) % list.length; render(); };
 
-  /* ═══════════════════════════════════════════════════════════════════
-     SOCIAL MEDIA SLIDER — fade between client mosaics.
-     ═══════════════════════════════════════════════════════════════════ */
-  const socialSlides = Array.from(document.querySelectorAll<HTMLElement>('[data-social-slide]'));
-  const socialDots   = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-social-goto]'));
-  const SOC_COUNT = socialSlides.length;
-  let socSlide = 1;
-  const goToSocSlide = (n: number) => {
-    const target = ((n - 1 + SOC_COUNT) % SOC_COUNT) + 1;
-    if (target === socSlide) return;
-    socSlide = target;
-    for (const s of socialSlides) s.classList.toggle('is-active', parseInt(s.dataset.socialSlide || '0', 10) === socSlide);
-    for (const d of socialDots)   d.classList.toggle('is-active', parseInt(d.dataset.socialGoto || '0', 10) === socSlide);
+  tiles.forEach(t => {
+    if (t.classList.contains('no-expand')) return;
+    t.addEventListener('click', () => openAt(t));
+    t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAt(t); } });
+  });
+  lb.querySelector('[data-lb-close]')?.addEventListener('click', close);
+  lb.querySelector('[data-lb-prev]')?.addEventListener('click', () => step(-1));
+  lb.querySelector('[data-lb-next]')?.addEventListener('click', () => step(1));
+  let justDragged = false;
+  lb.addEventListener('click', e => {
+    if (justDragged) { justDragged = false; return; }
+    if (e.target === lb || e.target === stage) close();
+  });
+  document.addEventListener('keydown', e => {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') step(1);
+    else if (e.key === 'ArrowLeft') step(-1);
+  });
+
+  // Swipe / drag
+  let x0 = 0, dx = 0, dragging = false;
+  stage.addEventListener('pointerdown', e => {
+    if ((e.target as HTMLElement).closest('video')) return;   // keep native video controls usable
+    dragging = true; x0 = e.clientX; dx = 0;
+    mediaEl.style.transition = 'none';
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    dx = e.clientX - x0;
+    mediaEl.style.transform = `translateX(${dx}px)`;
+  });
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    mediaEl.style.transition = '';
+    mediaEl.style.transform = '';
+    justDragged = Math.abs(dx) > 5;
+    if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1);
   };
-  document.querySelector<HTMLButtonElement>('[data-social-prev]')
-    ?.addEventListener('click', () => goToSocSlide(socSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-social-next]')
-    ?.addEventListener('click', () => goToSocSlide(socSlide + 1));
-  for (const d of socialDots) {
-    d.addEventListener('click', () => goToSocSlide(parseInt(d.dataset.socialGoto || '1', 10)));
-  }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
 
-  /* ═══════════════════════════════════════════════════════════════════
-     REAL ESTATE PHOTO SLIDER — fade between 6 preset mosaic slides (5
-     standard 11-slot + 1 custom 3-column magazine).
-     ═══════════════════════════════════════════════════════════════════ */
-  const reGrids = Array.from(document.querySelectorAll<HTMLElement>('[data-re-slide]'));
-  const reDots  = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-re-goto]'));
-  const RE_COUNT = reGrids.length;
-  let reSlide = 1;
-  const goToReSlide = (n: number) => {
-    const target = ((n - 1 + RE_COUNT) % RE_COUNT) + 1;
-    if (target === reSlide) return;
-    reSlide = target;
-    for (const g of reGrids) g.classList.toggle('is-active', parseInt(g.dataset.reSlide || '0', 10) === reSlide);
-    for (const d of reDots)  d.classList.toggle('is-active', parseInt(d.dataset.reGoto || '0', 10) === reSlide);
-  };
-  document.querySelector<HTMLButtonElement>('[data-re-prev]')
-    ?.addEventListener('click', () => goToReSlide(reSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-re-next]')
-    ?.addEventListener('click', () => goToReSlide(reSlide + 1));
-  for (const d of reDots) {
-    d.addEventListener('click', () => goToReSlide(parseInt(d.dataset.reGoto || '1', 10)));
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════
-     HOSPITALITY PHOTO SLIDER — reuses the real-estate mosaic styles.
-     ═══════════════════════════════════════════════════════════════════ */
-  const hospGrids = Array.from(document.querySelectorAll<HTMLElement>('[data-hosp-slide]'));
-  const hospDots  = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-hosp-goto]'));
-  const HOSP_COUNT = hospGrids.length;
-  let hospSlide = 1;
-  const goToHospSlide = (n: number) => {
-    const target = ((n - 1 + HOSP_COUNT) % HOSP_COUNT) + 1;
-    if (target === hospSlide) return;
-    hospSlide = target;
-    for (const g of hospGrids) g.classList.toggle('is-active', parseInt(g.dataset.hospSlide || '0', 10) === hospSlide);
-    for (const d of hospDots)  d.classList.toggle('is-active', parseInt(d.dataset.hospGoto || '0', 10) === hospSlide);
-  };
-  document.querySelector<HTMLButtonElement>('[data-hosp-prev]')
-    ?.addEventListener('click', () => goToHospSlide(hospSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-hosp-next]')
-    ?.addEventListener('click', () => goToHospSlide(hospSlide + 1));
-  for (const d of hospDots) {
-    d.addEventListener('click', () => goToHospSlide(parseInt(d.dataset.hospGoto || '1', 10)));
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════
-     SCHOOLS PHOTO SLIDER — fade between preset mosaic slides. Tiles are
-     marked [data-no-expand] to prevent any future lightbox affordance.
-     ═══════════════════════════════════════════════════════════════════ */
-  const schoolsGrids = Array.from(document.querySelectorAll<HTMLElement>('[data-schools-slide]'));
-  const schoolsDots  = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-schools-goto]'));
-  const SCHOOLS_COUNT = schoolsGrids.length;
-  let schoolsSlide = 1;
-  const goToSchoolsSlide = (n: number) => {
-    const target = ((n - 1 + SCHOOLS_COUNT) % SCHOOLS_COUNT) + 1;
-    if (target === schoolsSlide) return;
-    schoolsSlide = target;
-    for (const g of schoolsGrids) g.classList.toggle('is-active', parseInt(g.dataset.schoolsSlide || '0', 10) === schoolsSlide);
-    for (const d of schoolsDots)  d.classList.toggle('is-active', parseInt(d.dataset.schoolsGoto || '0', 10) === schoolsSlide);
-  };
-  document.querySelector<HTMLButtonElement>('[data-schools-prev]')
-    ?.addEventListener('click', () => goToSchoolsSlide(schoolsSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-schools-next]')
-    ?.addEventListener('click', () => goToSchoolsSlide(schoolsSlide + 1));
-  for (const d of schoolsDots) {
-    d.addEventListener('click', () => goToSchoolsSlide(parseInt(d.dataset.schoolsGoto || '1', 10)));
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════
-     AUTOMOTIVE PHOTO SLIDER — simple fade between 3 preset mosaic slides.
-     ═══════════════════════════════════════════════════════════════════ */
-  const autoGrids = Array.from(document.querySelectorAll<HTMLElement>('[data-auto-slide]'));
-  const autoDots  = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-auto-goto]'));
-  const AUTO_COUNT = autoGrids.length;
-  let autoSlide = 1;
-
-  const goToAutoSlide = (n: number) => {
-    const target = ((n - 1 + AUTO_COUNT) % AUTO_COUNT) + 1;
-    if (target === autoSlide) return;
-    autoSlide = target;
-    for (const g of autoGrids) g.classList.toggle('is-active', parseInt(g.dataset.autoSlide || '0', 10) === autoSlide);
-    for (const d of autoDots)  d.classList.toggle('is-active', parseInt(d.dataset.autoGoto || '0', 10) === autoSlide);
-  };
-
-  document.querySelector<HTMLButtonElement>('[data-auto-prev]')
-    ?.addEventListener('click', () => goToAutoSlide(autoSlide - 1));
-  document.querySelector<HTMLButtonElement>('[data-auto-next]')
-    ?.addEventListener('click', () => goToAutoSlide(autoSlide + 1));
-  for (const d of autoDots) {
-    d.addEventListener('click', () => goToAutoSlide(parseInt(d.dataset.autoGoto || '1', 10)));
-  }
-
-  /* ═══════════════════════════════════════════════════════════════════
-     HERO VIDEO MUTE TOGGLE
-     Video starts muted so autoplay works across browsers; the button
-     lets the user unmute (and re-mute) at will.
-     ═══════════════════════════════════════════════════════════════════ */
+  /* ── Hero mute toggle ───────────────────────────────────────────── */
   const heroVideo = document.querySelector<HTMLVideoElement>('[data-hero-video]');
-  const heroMuteBtn = document.querySelector<HTMLButtonElement>('[data-hero-mute]');
-
-  if (heroVideo && heroMuteBtn) {
+  const heroMute  = document.querySelector<HTMLButtonElement>('[data-hero-mute]');
+  if (heroVideo && heroMute) {
     const sync = () => {
-      heroMuteBtn.setAttribute('aria-pressed', String(heroVideo.muted));
-      heroMuteBtn.setAttribute('aria-label', heroVideo.muted ? 'Unmute video' : 'Mute video');
+      heroMute.setAttribute('aria-pressed', String(heroVideo.muted));
+      heroMute.setAttribute('aria-label', heroVideo.muted ? 'Unmute video' : 'Mute video');
     };
-    heroMuteBtn.addEventListener('click', () => {
+    heroMute.addEventListener('click', () => {
       heroVideo.muted = !heroVideo.muted;
       if (!heroVideo.muted) heroVideo.play().catch(() => {});
       sync();
@@ -912,714 +327,237 @@ const schoolsSlides = [
 </script>
 
 <style>
-  /* ─────────────────────────────────────────────────────────────
-     Purple → warm-brown gradient — applied to the page wrapper (works
-     regardless of :has() support) so every section sits on the right hue.
-     ───────────────────────────────────────────────────────────── */
+  /* ── Page tint (sits over BaseLayout's starfield) ───────────────── */
   .work-page-bg {
-    position: fixed; inset: 0; z-index: -1;
-    background: linear-gradient(180deg, #2a1445 0%, #2a1240 12%, #331635 32%, #4a1e1e 60%, #3d1a0f 80%, #1a0d10 100%);
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(180deg, rgba(81,69,155,.16), rgba(107,62,136,.10) 30%, rgba(142,74,93,.10) 60%, rgba(176,74,46,.14));
   }
 
-  /* ─────────────────────────────────────────────────────────────
-     HERO VIDEO — natural 1920×920 aspect so the whole frame shows
-     without cropping. Mute/unmute toggle sits in the bottom-right.
-     ───────────────────────────────────────────────────────────── */
-  .work-hero {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1920 / 820;
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-    background: #14091a;
+  /* ── Shared round icon button ───────────────────────────────────── */
+  .w-round-btn {
+    appearance: none; flex: none;
+    width: 52px; height: 52px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; cursor: pointer;
+    background: rgba(5,3,8,.55);
+    border: 1px solid rgba(255,255,255,.28);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: border-color .2s ease, background .2s ease, transform .2s ease;
   }
-  .work-hero-video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    background: #000;
-  }
-  .work-hero-mute {
-    position: absolute;
-    right: 20px;
-    bottom: 20px;
-    z-index: 3;
-    appearance: none;
-    background: rgba(0, 0, 0, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    color: #fff;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background .18s ease, transform .18s ease, border-color .18s ease;
-    backdrop-filter: blur(6px);
-  }
-  .work-hero-mute:hover {
-    background: rgba(0, 0, 0, 0.75);
-    border-color: rgba(255, 200, 140, 0.7);
-    transform: translateY(-1px);
-  }
-  .work-hero-mute:focus-visible {
-    outline: 2px solid rgba(255, 200, 140, 0.75);
-    outline-offset: 2px;
-  }
-  .work-hero-mute .icon-unmuted { display: none; }
-  .work-hero-mute[aria-pressed="false"] .icon-muted   { display: none; }
-  .work-hero-mute[aria-pressed="false"] .icon-unmuted { display: block; }
+  .w-round-btn:hover { border-color: rgba(255,147,23,.7); background: rgba(5,3,8,.75); transform: translateY(-1px); }
+  .w-round-btn:active { transform: scale(.96); }
+  .w-round-btn:focus-visible { outline: 2px solid #ff9317; outline-offset: 3px; }
 
-  /* ─────────────────────────────────────────────────────────────
-     INDUSTRY PILLS
-     ───────────────────────────────────────────────────────────── */
-  .industries {
-    position: relative;
-    padding: 44px 0 60px;
+  /* ── Hero ───────────────────────────────────────────────────────── */
+  .w-hero { position: relative; width: 100%; aspect-ratio: 1920 / 820; min-height: 480px; max-height: 86vh; overflow: hidden; background: #050308; }
+  .w-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .w-hero-shade { position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(5,3,8,.35), rgba(5,3,8,0) 30%, rgba(5,3,8,0) 55%, rgba(5,3,8,.92)); }
+  .w-hero-title {
+    position: absolute; left: max(44px, calc((100% - 1400px) / 2 + 44px)); bottom: 48px; margin: 0;
+    font-family: 'Madani', sans-serif; font-weight: 900;
+    font-size: clamp(64px, 8.9vw, 128px); line-height: .9; letter-spacing: -0.03em;
+    color: #fff; pointer-events: none;
   }
-  .industries-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px 32px;
-  }
-  .industry-pill {
-    appearance: none;
-    background: transparent;
-    border: 0;
-    color: #d5cbc0;
-    font-family: 'Madani', sans-serif;
-    font-weight: 500;
-    font-size: clamp(14px, 1.1vw, 18px);
-    padding: 6px 4px;
-    cursor: pointer;
-    letter-spacing: .1px;
-    transition: color .2s ease, transform .2s ease;
-    border-bottom: 2px solid transparent;
-  }
-  .industry-pill:hover   { color: #ffffff; transform: translateY(-1px); }
-  .industry-pill.is-active {
-    color: #ffffff;
-    border-bottom-color: rgba(255, 200, 140, 0.55);
-  }
+  .w-hero-mute { position: absolute; right: max(44px, calc((100% - 1400px) / 2 + 44px)); bottom: 60px; }
+  .w-hero-mute .icon-unmuted { display: none; }
+  .w-hero-mute[aria-pressed="false"] .icon-muted { display: none; }
+  .w-hero-mute[aria-pressed="false"] .icon-unmuted { display: block; }
 
-  /* ─────────────────────────────────────────────────────────────
-     CATEGORY SECTION (Photography / Videography / Social Media)
-     ───────────────────────────────────────────────────────────── */
-  .cat-section {
-    position: relative;
-    z-index: 1;                 /* lift the whole section above the -1 bg layer */
-    padding: 60px 0 90px;
+  /* ── Filters ────────────────────────────────────────────────────── */
+  .w-filters { padding-top: 56px; }
+  .w-scroll { scrollbar-width: none; }
+  .w-scroll::-webkit-scrollbar { display: none; }
+  .w-tabs { display: flex; gap: 44px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .w-tab {
+    position: relative; flex: none; appearance: none; background: none; border: 0; cursor: pointer;
+    padding: 0 0 22px; white-space: nowrap;
+    font-family: 'Madani', sans-serif; font-weight: 900; font-size: 40px; line-height: 1; letter-spacing: -1px;
+    color: #5f5852; transition: color .25s ease;
   }
-  .cat-title {
-    position: relative;
-    z-index: 2;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    font-family: 'Madani', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 600;
-    font-size: clamp(48px, 5.4vw, 82px);
-    line-height: 1.05;
-    letter-spacing: 6px;
-    text-align: center;
-    color: #ffffff !important;
-    margin: 0 0 12px;
-    text-shadow: 0 2px 24px rgba(0,0,0,0.55);
+  .w-tab::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px;
+    background: #ff9317; transform: scaleX(0); transform-origin: left;
+    transition: transform .4s cubic-bezier(.2,.7,.2,1);
   }
-  .cat-title-plain {
-    font-weight: 500;
-    letter-spacing: 1px;
-    font-size: clamp(36px, 3.8vw, 58px);
-    margin-bottom: 44px;
+  .w-tab:hover { color: #F3EDE4; }
+  .w-tab.is-active { color: #F3EDE4; }
+  .w-tab.is-active::after { transform: scaleX(1); }
+  .w-tab:focus-visible { outline: 2px solid #ff9317; outline-offset: 4px; border-radius: 4px; }
+  .w-tab.is-unavailable { color: #2e2a2e; }
+  .w-tab-hint {
+    position: absolute; left: 0; bottom: 4px;
+    font-weight: 500; font-size: 12px; letter-spacing: 0; color: #6a635c;
+    opacity: 0; transition: opacity .2s ease; pointer-events: none;
   }
-  .cat-sub {
-    position: relative;
-    z-index: 2;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    font-family: 'Madani', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 400;
-    font-size: 15px;
-    line-height: 1.4;
-    color: #e4d9cb !important;
-    text-align: center;
-    margin: 0 0 46px;
-  }
+  .w-tab.is-unavailable .w-tab-hint { opacity: 1; }
 
-  /* ─────────────────────────────────────────────────────────────
-     PHOTOGRAPHY SLIDER — arrows flank the grid, dots sit below.
-     The grid distorts (blur + saturate + skew) on slide change so
-     the layout swap is hidden inside the effect.
-     ───────────────────────────────────────────────────────────── */
-  .photo-slider {
-    position: relative;
-    display: grid;
-    grid-template-columns: 56px 1fr 56px;
-    align-items: center;
-    gap: 12px;
+  .w-chiprow { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 24px; }
+  .w-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .w-chip {
+    flex: none; appearance: none; white-space: nowrap; cursor: pointer;
+    height: 44px; padding: 0 18px; border-radius: 999px;
+    font-family: 'Madani', sans-serif; font-weight: 600; font-size: 14px; line-height: 1;
+    color: #c3bbb2; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+    transition: background .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .2s ease;
   }
-  .slider-arrow {
-    appearance: none;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.14);
-    color: #f5efe4;
-    width: 48px; height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background .18s ease, transform .18s ease, border-color .18s ease;
-    justify-self: center;
+  .w-chip:hover { color: #fff; transform: translateY(-1px); border-color: rgba(255,255,255,.18); }
+  .w-chip:active { transform: scale(.97); }
+  .w-chip:focus-visible { outline: 2px solid #ff9317; outline-offset: 2px; }
+  .w-chip.is-active {
+    color: #fff; background: linear-gradient(180deg,#4c4844,#201d1a); border-color: rgba(255,147,23,.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.24), inset 0 -3px 7px rgba(0,0,0,.6), 0 0 22px rgba(255,120,40,.18);
   }
-  .slider-arrow:hover {
-    background: rgba(255,255,255,0.16);
-    border-color: rgba(255,200,140,0.6);
-    transform: translateY(-1px);
-  }
-  .slider-arrow:active { transform: translateY(0) scale(.96); }
-  .slider-arrow:focus-visible {
-    outline: 2px solid rgba(255,200,140,0.75);
-    outline-offset: 2px;
-  }
-  .slider-dots {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 22px;
-  }
-  .slider-dot {
-    appearance: none;
-    background: rgba(255,255,255,0.22);
-    border: 0;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    cursor: pointer;
-    padding: 0;
-    transition: background .2s ease, transform .2s ease, width .2s ease;
-  }
-  .slider-dot:hover { background: rgba(255,255,255,0.45); }
-  .slider-dot.is-active {
-    background: #f5cfa0;
-    width: 26px;
-    border-radius: 6px;
-  }
+  .w-chip[hidden] { display: none; }
+  .w-count { flex: none; font-family: 'Madani', sans-serif; font-weight: 500; font-size: 14px; color: #8a827a; }
 
-  /* ─────────────────────────────────────────────────────────────
-     PHOTOGRAPHY GRID — proportions taken directly from the source
-     layout screenshot. 4 base columns in ratio 5 : 4 : 6 : 5 (col 3
-     is the widest so photo 10 reads as a large tile). 4 equal rows,
-     row 3 split into two sub-rows so col 2 can stack p8 over p9.
-     Grid is 1:1 aspect ratio to preserve the source proportions.
-     ───────────────────────────────────────────────────────────── */
-  .photo-grid {
-    display: grid;
-    grid-template-columns: 5fr 4fr 6fr 5fr;
-    grid-template-rows: repeat(4, 1fr);
-    aspect-ratio: 1 / 1;
-    gap: 10px;
-    grid-template-areas:
-      "p1 p2 p3 p3"
-      "p4 p4 p5 p6"
-      "p7 p8 p10 p11"
-      "p7 p9 p10 p11";
-    opacity: 1;
-    transition: opacity 0.5s ease;
-    will-change: opacity;
+  /* ── Masonry ────────────────────────────────────────────────────── */
+  .w-gallery { padding-top: 48px; padding-bottom: 140px; }
+  .w-masonry { columns: 4; column-gap: 16px; }
+  .g-tile {
+    position: relative; margin: 0 0 16px; break-inside: avoid;
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);
   }
-  .photo-grid.is-swapping {
-    opacity: 0;
+  .g-tile.in { opacity: 1; transform: none; }
+  .g-tile[hidden], .g-tile[data-broken] { display: none; }
+  .g-tile:not(.no-expand) { cursor: zoom-in; }
+  .g-tile:focus-visible { outline: none; }
+  .g-tile:focus-visible .g-media { outline: 2px solid #ff9317; outline-offset: 3px; }
+
+  .g-media {
+    position: relative; overflow: hidden; border-radius: 14px;
+    background: #0e0b10;
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 10px 26px rgba(0,0,0,.4);
+    transition: transform .45s cubic-bezier(.2,.7,.2,1), box-shadow .45s ease, border-color .35s ease;
   }
-  /* Per-slide column ratios — the source layout screenshots vary
-     the widths between slides, so each slide gets its own tuning. */
-  .photo-grid[data-slide="1"] { grid-template-columns: 5fr 4fr 6fr 5fr; }
-  .photo-grid[data-slide="2"] { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .photo-grid[data-slide="3"] { grid-template-columns: 23fr 22fr 28fr 27fr; }
-  .photo-grid[data-slide="4"] { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  /* Every tile uses a unique gradient placeholder + label so shapes are
-     always visible. The <img> layers on top; if it fails, onerror hides it
-     and the placeholder + label remain. */
-  .ph-tile, .social-tile, .social-wide, .video-tile {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.10);
-  }
-  .ph-tile { border-radius: 14px; box-shadow: 0 8px 22px rgba(0,0,0,0.35); }
-  .social-tile img, .social-wide img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    position: relative; z-index: 1;
-  }
-  /* Cross-fade + gentle "reveal" scale on Photography tiles. Two <img> layers
-     stacked; JS swaps the inactive layer's src, waits for decode, then flips
-     .is-active → CSS handles the smooth opacity fade AND a subtle 1.05→1
-     scale so the incoming image reads as a "reveal" instead of a raw dissolve. */
-  .ph-tile { transform: translateZ(0); }  /* isolate stacking context */
-  .ph-tile .ph-layer {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    z-index: 1;
-    opacity: 0;
-    transform: scale(1.06);
-    transition:
-      opacity 1.1s cubic-bezier(.4,.0,.2,1),
-      transform 1.4s cubic-bezier(.22,.7,.2,1);
-    will-change: opacity, transform;
-  }
-  .ph-tile .ph-layer.is-active {
-    opacity: 1;
-    transform: scale(1);
-  }
-  .tile-label {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 0;
-    font-family: 'Madani', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: .3px;
-    color: rgba(255,255,255,0.85);
-    text-align: center;
-    padding: 8px;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  .g-media img, .g-media video { display: block; width: 100%; height: auto; user-select: none; }
+  .g-tile[data-type="video"] .g-media { aspect-ratio: 9 / 16; }
+  .g-tile[data-type="video"] video { height: 100%; object-fit: cover; }
+
+  .g-badge {
+    position: absolute; top: 12px; right: 12px;
+    display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px;
+    border-radius: 999px; color: #fff;
+    background: rgba(5,3,8,.55); border: 1px solid rgba(255,255,255,.25);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    font-family: 'Madani', sans-serif; font-weight: 600; font-size: 12px; line-height: 1;
     pointer-events: none;
   }
-  .tile-label-dark { color: rgba(30,20,30,0.7); text-shadow: none; }
+  .g-progress { position: absolute; left: 0; top: 0; height: 3px; width: 0; background: #ff9317; pointer-events: none; }
+  .g-tile.is-previewing .g-progress { animation: gPrev 6s linear infinite; }
+  @keyframes gPrev { from { width: 0; } to { width: 100%; } }
 
-  /* 10 unique photo tile gradients */
-  .ph-tile-1  { background: linear-gradient(135deg,#6a2a3a,#a83a2a); }
-  .ph-tile-2  { background: linear-gradient(135deg,#4a2b1a,#8a5b2a); }
-  .ph-tile-3  { background: linear-gradient(135deg,#5a2820,#a04a20); }
-  .ph-tile-4  { background: linear-gradient(135deg,#3a2848,#7a3a68); }
-  .ph-tile-5  { background: linear-gradient(135deg,#2a4a2a,#6a8a2a); }
-  .ph-tile-6  { background: linear-gradient(135deg,#3a5a8a,#e56a48); }
-  .ph-tile-7  { background: linear-gradient(135deg,#a05820,#e08a2a); }
-  .ph-tile-8  { background: linear-gradient(135deg,#5a2a1a,#a05420); }
-  .ph-tile-9  { background: linear-gradient(135deg,#4a2830,#7a4838); }
-  .ph-tile-10 { background: linear-gradient(135deg,#2a3a1a,#6a7a30); }
-  .ph-tile-11 { background: linear-gradient(135deg,#3a2a4a,#7a4a7a); }
-  @media (max-width: 900px) {
-    .photo-slider {
-      grid-template-columns: 1fr;
-      gap: 14px;
-    }
-    .slider-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; }
-    .slider-arrow-left  { left: 6px; }
-    .slider-arrow-right { right: 6px; }
-    .photo-grid,
-    .photo-grid[data-slide] {
-      aspect-ratio: auto;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: repeat(6, 160px);
-      grid-template-areas:
-        "p1 p2"
-        "p3 p3"
-        "p4 p4"
-        "p5 p6"
-        "p7 p8"
-        "p10 p11";
-    }
-    .photo-grid .ph-tile-9 { display: none; }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     REAL ESTATE PHOTO GRIDS — fade-crossed slides. Slides 1-4/6 reuse
-     the standard 11-slot mosaic (aspect ratio 1:1, same shape as the
-     existing food-beverage grid). Slide 5 is a custom 3-column
-     magazine layout using aspect-ratio on each tile.
-     ───────────────────────────────────────────────────────────── */
-  .re-grid-wrap { position: relative; width: 100%; }
-  .re-grid {
-    display: grid;
-    gap: 10px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .5s ease;
-  }
-  .re-grid:not(.is-active) { position: absolute; inset: 0; }
-  .re-grid.is-active { opacity: 1; visibility: visible; position: relative; }
-  .re-tile {
-    position: relative;
-    overflow: hidden;
-    border-radius: 14px;
-    background: #14090f;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.10);
-  }
-  .re-tile img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  /* Standard 11-slot mosaic — mirrors the food-beverage photo-grid. */
-  .re-grid-std {
-    grid-template-columns: 5fr 4fr 6fr 5fr;
-    grid-template-rows: repeat(4, 1fr);
-    aspect-ratio: 1 / 1;
-    grid-template-areas:
-      "p1 p2 p3 p3"
-      "p4 p4 p5 p6"
-      "p7 p8 p10 p11"
-      "p7 p9 p10 p11";
-  }
-
-  /* Slide 5 — 3 flex columns each stacking portrait tiles by aspect. */
-  .re-grid-p5 {
-    display: flex;
-    gap: 10px;
-  }
-  .re-grid-p5 .re5-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  @media (max-width: 900px) {
-    .re-grid-std {
-      aspect-ratio: auto;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: repeat(6, 160px);
-      grid-template-areas:
-        "p1 p2"
-        "p3 p3"
-        "p4 p4"
-        "p5 p6"
-        "p7 p8"
-        "p10 p11";
-    }
-    .re-grid-std .re-tile-9 { display: none; }
-    .re-grid-p5 { flex-direction: column; }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     SCHOOLS PHOTO GRIDS — mirrors the automotive fader but with
-     schools-specific per-slide mosaics. Tiles are display-only.
-     ───────────────────────────────────────────────────────────── */
-  .schools-grid-wrap {
-    position: relative;
-    width: 100%;
-  }
-  .schools-grid {
-    display: grid;
-    gap: 10px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .5s ease;
+  .g-cap { display: flex; flex-direction: column; gap: 5px; font-family: 'Madani', sans-serif; }
+  .g-title { font-weight: 800; font-size: 16px; line-height: 1.2; color: #fff; }
+  .g-cat { font-weight: 500; font-size: 12px; line-height: 1.2; color: #ff9317; }
+  .g-cap-over {
+    position: absolute; left: 12px; right: 12px; bottom: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    background: rgba(12,10,14,.72); border: 1px solid rgba(255,255,255,.08);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    opacity: 0; transform: translateY(14px);
+    transition: opacity .3s ease, transform .45s cubic-bezier(.2,.7,.2,1);
     pointer-events: none;
   }
-  .schools-grid:not(.is-active) {
-    position: absolute;
-    inset: 0;
+  .g-cap-below { display: none; }
+  .no-expand .g-cap-over { display: none; }
+
+  /* Hover affordances only where a real pointer exists */
+  @media (hover: hover) and (pointer: fine) {
+    .g-tile:not(.no-expand):hover .g-media {
+      transform: translateY(-4px);
+      border-color: rgba(255,147,23,.45);
+      box-shadow: 0 24px 50px rgba(0,0,0,.55), 0 0 30px rgba(255,120,40,.12);
+    }
+    .g-tile:hover .g-cap-over { opacity: 1; transform: none; }
   }
-  .schools-grid.is-active {
-    opacity: 1;
-    visibility: visible;
-    position: relative;
-    /* Tiles remain non-interactive; keeps pointer-events off so no
-       hover/click affordance is available on the images. */
+  /* Touch devices: caption sits below the image instead */
+  @media (hover: none), (max-width: 800px) {
+    .g-cap-over { display: none; }
+    .g-cap-below { display: flex; padding: 10px 2px 0; }
+    .g-cap-below .g-title { font-weight: 700; font-size: 14px; color: #F3EDE4; }
+    .g-cap-below .g-cat { font-size: 11px; color: #8a827a; }
   }
-  .schools-tile {
-    position: relative;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #14090f;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.08);
-    cursor: default;
+
+  /* ── Lightbox ───────────────────────────────────────────────────── */
+  .w-lb {
+    position: fixed; inset: 0; z-index: 10000;
+    display: grid; grid-template-rows: auto 1fr auto;
+    background: rgba(4,3,8,.94);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    animation: wlbFade .28s ease both;
     user-select: none;
   }
-  .schools-tile img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    pointer-events: none; /* explicit: no click/expand */
-    -webkit-user-drag: none;
-  }
-
-  /* Slide 1 — 11 tiles, 4×3 grid, middle column tall. */
-  .schools-grid-1 {
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    aspect-ratio: 4 / 3;
-    grid-template-areas:
-      "s1 s2 s3 s4"
-      "s5 s6 s3 s7"
-      "s8 s9 s10 s11";
-  }
-
-  /* Slide 2 — 9 tiles, 4×3 grid with three tall spans matching Pag 2 PSD:
-     s3 spans rows 1-2 col 3, s6 spans rows 2-3 col 2, s7 spans rows 2-3 col 4. */
-  .schools-grid-2 {
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    aspect-ratio: 6878 / 5275;
-    grid-template-areas:
-      "s1 s2 s3 s4"
-      "s5 s6 s3 s7"
-      "s8 s6 s9 s7";
-  }
-
-  /* Slide 3 — 3 extra-wide group photos stacked vertically. Uses flex so
-     each tile's aspect-ratio drives its own height without grid row
-     collapsing. */
-  .schools-grid-3 {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-  }
-  .schools-grid-3 .schools-tile {
-    width: 100%;
-    aspect-ratio: 6901 / 3014;
-    flex: 0 0 auto;
-  }
-
-  @media (max-width: 900px) {
-    .schools-grid-1, .schools-grid-2 {
-      aspect-ratio: auto;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: none;
-      grid-template-areas: none;
-    }
-    .schools-grid-1 .schools-tile,
-    .schools-grid-2 .schools-tile { grid-area: auto !important; aspect-ratio: 1 / 1; }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     AUTOMOTIVE PHOTO GRIDS — one mosaic per PSD page. Wrapper stacks
-     all slides in the same cell; the active one fades in.
-     ───────────────────────────────────────────────────────────── */
-  .auto-grid-wrap {
-    position: relative;
-    width: 100%;
-  }
-  .auto-grid {
-    display: grid;
-    gap: 10px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .5s ease;
+  .w-lb[hidden] { display: none; }
+  @keyframes wlbFade { from { opacity: 0; } to { opacity: 1; } }
+  .w-lb-top { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0 32px; }
+  .w-lb-pos { font-family: 'Madani', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 1px; color: #c3bbb2; }
+  .w-lb-stage { position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 16px 120px; touch-action: pan-y; cursor: grab; }
+  .w-lb-stage:active { cursor: grabbing; }
+  .w-lb-media { max-width: 100%; max-height: 100%; display: flex; transition: transform .35s cubic-bezier(.2,.7,.2,1); }
+  .w-lb-media.is-in { animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes wlbZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+  .w-lb-media img, .w-lb-media video {
+    display: block; max-width: min(100%, 1400px); max-height: calc(100vh - 260px);
+    width: auto; height: auto; object-fit: contain;
+    border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,.7);
     pointer-events: none;
   }
-  .auto-grid:not(.is-active) {
-    position: absolute;
-    inset: 0;
+  .w-lb-media video { pointer-events: auto; }
+  .w-lb-info {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;
+    width: min(100% - 64px, 1100px); margin: 0 auto; padding: 8px 0 32px;
   }
-  .auto-grid.is-active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    position: relative;
+  .w-lb-text { display: flex; flex-direction: column; gap: 8px; max-width: 720px; font-family: 'Madani', sans-serif; }
+  .w-lb-cat { margin: 0; font-weight: 600; font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase; color: #ff9317; }
+  .w-lb-title { margin: 0; font-weight: 800; font-size: 26px; line-height: 1.15; color: #fff; }
+  .w-lb-desc { margin: 0; font-weight: 400; font-size: 15px; line-height: 1.6; color: #a89f96;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .w-lb-nav { display: flex; gap: 10px; }
+
+  /* ── Responsive ─────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .w-masonry { columns: 3; }
+    .w-tab { font-size: 32px; }
   }
-  .auto-tile {
-    position: relative;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #14090f;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .auto-tile img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
+  @media (max-width: 800px) {
+    .w-hero { aspect-ratio: 4 / 5; max-height: 78vh; min-height: 0; }
+    .w-hero-title { left: 20px; bottom: 28px; font-size: 72px; letter-spacing: -2px; }
+    .w-hero-mute { right: 20px; bottom: 34px; width: 44px; height: 44px; }
+
+    .w-filters { padding-top: 28px; padding-left: 0; padding-right: 0; }
+    .w-tabs { gap: 24px; overflow-x: auto; padding: 0 20px; }
+    .w-tab { min-height: 48px; padding-bottom: 14px; font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+    .w-tab-hint { display: none; }
+    .w-chiprow { padding-top: 16px; }
+    .w-chips { flex-wrap: nowrap; overflow-x: auto; padding: 0 20px 4px; scroll-snap-type: x proximity; }
+    .w-chip { scroll-snap-align: start; padding: 0 16px; }
+    .w-count { display: none; }
+
+    .w-gallery { padding-top: 28px; padding-bottom: 72px; }
+    .w-masonry { columns: 2; column-gap: 10px; }
+    .g-tile { margin-bottom: 18px; }
+    .g-media { border-radius: 12px; }
+    .g-badge { top: 8px; right: 8px; height: 26px; font-size: 11px; padding: 0 10px 0 8px; }
+
+    .w-lb-top { padding: 16px 16px 0 22px; }
+    .w-lb-stage { padding: 12px 0; }
+    .w-lb-media img, .w-lb-media video { max-width: 100vw; max-height: calc(100vh - 300px); border-radius: 0; }
+    .w-lb-info { flex-direction: column; align-items: stretch; gap: 16px; width: auto; margin: 0; padding: 8px 22px 28px; }
+    .w-lb-title { font-size: 22px; }
+    .w-lb-desc { font-size: 14px; }
+    .w-lb-nav { justify-content: space-between; }
+    .w-lb-nav .w-round-btn { width: 48px; height: 48px; }
   }
 
-  /* Slide 1 — Corvette, 9 tiles laid out to echo the source PSD. */
-  .auto-grid-1 {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: repeat(4, 1fr);
-    aspect-ratio: 1 / 1;
-    grid-template-areas:
-      "a1 a1 a2 a2"
-      "a3 a4 a5 a5"
-      "a3 a6 a7 a8"
-      "a9 a9 a7 a8";
+  @media (prefers-reduced-motion: reduce) {
+    .g-tile { opacity: 1; transform: none; transition: none; }
   }
 
-  /* Slide 2 — Porsche GT3, 12 tiles in a 4×3 mosaic. */
-  .auto-grid-2 {
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    aspect-ratio: 4 / 3;
-    grid-template-areas:
-      "a1  a2  a3  a4"
-      "a5  a6  a7  a8"
-      "a9  a10 a11 a12";
-  }
-
-  /* Slide 3 — Off-road bikes, 13 tiles in a 3-column stagger. */
-  .auto-grid-3 {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-    aspect-ratio: 3 / 5;
-    grid-template-areas:
-      "a1  a2  a2"
-      "a3  a4  a5"
-      "a6  a6  a7"
-      "a8  a9  a10"
-      "a11 a12 a13";
-  }
-
-  @media (max-width: 900px) {
-    .auto-grid-1, .auto-grid-2, .auto-grid-3 {
-      aspect-ratio: auto;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: none;
-      grid-template-areas: none;
-    }
-    .auto-tile { grid-area: auto !important; aspect-ratio: 1 / 1; }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     VIDEOGRAPHY GRID — 4 cols × 2 rows of vertical (9:16) tiles
-     ───────────────────────────────────────────────────────────── */
-  .video-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-  }
-  .video-tile {
-    aspect-ratio: 9 / 16;
-    border-radius: 14px;
-    background: #14090f;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 0 1px rgba(255,180,120,0.18), 0 6px 20px rgba(0,0,0,0.35);
-    overflow: hidden;
-  }
-  .video-tile video {
-    position: absolute;
-    inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    z-index: 1;
-    display: block;
-  }
-  .video-tile .tile-label { position: absolute; bottom: 12px; top: auto; align-items: flex-end; z-index: 0; }
-  .video-play { display: none; }
-  @media (max-width: 900px) {
-    .video-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  }
-  @media (max-width: 480px) {
-    .video-grid { grid-template-columns: 1fr; gap: 10px; }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     SOCIAL MEDIA GRID — 4-column mosaic mirroring the source layout
-     screenshot. All 16 tiles are portrait-ish squares; heights vary
-     only through image object-fit, keeping cell shape consistent.
-     ───────────────────────────────────────────────────────────── */
-  .social-slider {
-    position: relative;
-    display: grid;
-    grid-template-columns: 56px 1fr 56px;
-    align-items: center;
-    gap: 12px;
-    max-width: 1320px;
-    margin: 0 auto;
-  }
-  .social-slides {
-    position: relative;
-    width: 100%;
-  }
-  .social-block {
-    max-width: 1200px;
-    margin: 0 auto;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.5s ease;
-  }
-  .social-block:not(.is-active) {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-  .social-block.is-active {
-    opacity: 1;
-    visibility: visible;
-    position: relative;
-  }
-  .social-client-title {
-    font-family: 'Madani', sans-serif;
-    font-weight: 500;
-    font-size: clamp(20px, 2vw, 28px);
-    color: #f5efe4;
-    text-align: center;
-    margin: 0 0 20px;
-    letter-spacing: 0.5px;
-  }
-  /* CSS columns give natural masonry — each tile keeps its own aspect ratio. */
-  .social-mosaic {
-    column-count: 4;
-    column-gap: 10px;
-  }
-  .social-tile {
-    break-inside: avoid;
-    display: block;
-    margin: 0 0 10px;
-    border-radius: 8px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-    background: #1a0d18;
-    overflow: hidden;
-    position: relative;
-  }
-  .social-tile.is-tall   { aspect-ratio: 1615 / 3385; }
-  .social-tile.is-medium { aspect-ratio: 1615 / 2077; }
-  .social-tile img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    position: relative; z-index: 1;
-  }
-  .social-desc {
-    max-width: 1000px;
-    margin: 60px auto 0;
-    font-family: 'Madani', sans-serif;
-    font-weight: 400;
-    font-size: clamp(13px, 1.05vw, 17px);
-    line-height: 1.75;
-    color: #cbc1b6;
-    text-align: left;
-  }
-  @media (max-width: 900px) {
-    .social-slider { grid-template-columns: 1fr; }
-    .social-slider .slider-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; }
-    .social-slider .slider-arrow-left  { left: 6px; }
-    .social-slider .slider-arrow-right { right: 6px; }
-    .social-mosaic { column-count: 2; }
-    .social-desc { margin-top: 32px; font-size: 14px; }
-  }
-  @media (max-width: 1100px) and (min-width: 901px) {
-    .social-mosaic { column-count: 3; }
-  }
-  @media (max-width: 480px) {
-    .social-mosaic { column-count: 1; column-gap: 0; }
-    .social-tile { margin-bottom: 14px; }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-     Nav overrides for this page (Work has darker translucent nav)
-     ───────────────────────────────────────────────────────────── */
+  /* Nav sits over the reel on this page */
   :global(.site-nav) {
-    background: linear-gradient(180deg, rgba(22,10,32,0.7) 0%, rgba(22,10,32,0.3) 60%, rgba(22,10,32,0) 100%);
+    background: linear-gradient(180deg, rgba(5,3,8,.8) 0%, rgba(5,3,8,.3) 60%, rgba(5,3,8,0) 100%);
   }
 </style>
