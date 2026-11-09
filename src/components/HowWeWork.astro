@@ -5,7 +5,7 @@ const STAGE_W = 1000;
 const STAGE_H = 1250;
 const stops = [
   { title: 'Understand', l1: 'We take time to understand the', l2: 'brand, not just the brief',     x: 780, y: 340,  textSide: 'right', threshold: 0.24 },
-  { title: 'Plan',       l1: 'We put structure behind the',    l2: 'content',                       x: 220, y: 610,  textSide: 'right', threshold: 0.50 },
+  { title: 'Plan',       l1: 'We put structure behind the',    l2: 'content',                       x: 220, y: 610,  textSide: 'left' , threshold: 0.50 },
   { title: 'Create',     l1: 'We produce content that',        l2: 'actually represents the brand', x: 780, y: 880,  textSide: 'right', threshold: 0.76 },
   { title: 'Improve',    l1: 'We adjust, test, and build on',  l2: 'what works',                    x: 460, y: 1140, textSide: 'left',  threshold: 0.98 },
 ];
@@ -22,24 +22,20 @@ const SNAKE_D = `M 540 -60 C 540 160, 780 200, 780 340 C 780 470, 220 480, 220 6
   </div>
 
   <div class="hw-stage" data-hw-stage>
-    <svg class="hw-svg" viewBox={`0 0 ${STAGE_W} ${STAGE_H}`} preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+    <svg class="hw-svg" viewBox={`0 0 ${STAGE_W} ${STAGE_H}`} preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="hwLineGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#ffcf85" /><stop offset="0.5" stop-color="#ff8a3a" /><stop offset="1" stop-color="#df5435" />
         </linearGradient>
         <filter id="hwLineGlow" x="-30%" y="-10%" width="160%" height="120%"><feGaussianBlur stdDeviation="3" /></filter>
-        <filter id="hwBallGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="10" /></filter>
       </defs>
       <path d={SNAKE_D} fill="none" stroke="rgba(255,140,60,0.12)" stroke-width="2" stroke-linecap="round" />
       <path data-hw-line-glow d={SNAKE_D} fill="none" stroke="url(#hwLineGrad)" stroke-width="10" stroke-linecap="round" opacity="0.35" filter="url(#hwLineGlow)" style="stroke-dasharray:3000;stroke-dashoffset:3000;" />
       <path data-hw-line d={SNAKE_D} fill="none" stroke="url(#hwLineGrad)" stroke-width="2.6" stroke-linecap="round" style="stroke-dasharray:3000;stroke-dashoffset:3000;" />
-      {stops.map(s => (
-        <g class="hw-ball-group" data-hw-ball data-threshold={s.threshold}>
-          <circle class="hw-ball-halo" cx={s.x} cy={s.y} r="20" fill="#ff8a3a" filter="url(#hwBallGlow)" opacity="0" />
-          <circle cx={s.x} cy={s.y} r="8" fill="#ff8a3a" />
-        </g>
-      ))}
     </svg>
+    {stops.map(s => (
+      <span class="hw-ball" data-hw-ball data-threshold={s.threshold} style={`--x:${(s.x / STAGE_W) * 100}%;--y:${(s.y / STAGE_H) * 100}%;`} aria-hidden="true"></span>
+    ))}
 
     <ol class="hw-stops">
       {stops.map(s => (
@@ -71,16 +67,16 @@ const SNAKE_D = `M 540 -60 C 540 160, 780 200, 780 340 C 780 470, 220 480, 220 6
   .hw-sub { position: relative; margin: 14px 0 0 6px; font-weight: 400; font-size: 20px; line-height: 1; letter-spacing: .3px; color: #d8cec3; }
 
   /* ── Snake stage (≥900) ── */
-  .hw-stage { position: relative; z-index: 1; width: min(960px, 100%); aspect-ratio: 1000 / 1250; margin: -40px auto 0; }
+  .hw-stage { position: relative; z-index: 1; width: min(1200px, 100%); height: 1200px; margin: -40px auto 0; }
   .hw-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
   [data-hw-line], [data-hw-line-glow] { transition: stroke-dashoffset .12s linear; }
-  .hw-ball-halo { transition: opacity .5s ease; }
-  .hw-ball-group.is-lit .hw-ball-halo { opacity: .85; }
+  .hw-ball { position: absolute; left: var(--x); top: var(--y); width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #ff8a3a; pointer-events: none; transition: box-shadow .5s ease; }
+  .hw-ball.is-lit { box-shadow: 0 0 16px 6px rgba(255,138,58,.55); }
 
   .hw-stops { list-style: none; margin: 0; padding: 0; }
   .hw-stop { position: absolute; left: var(--x); top: var(--y); width: 300px; }
   .hw-stop-right { transform: translate(32px, -50%); text-align: left; }
-  .hw-stop-left  { transform: translate(calc(-100% - 32px), -50%); text-align: right; }
+  .hw-stop-left  { transform: translate(calc(-100% - 32px), -50%); text-align: right; max-width: calc(var(--x) + var(--gutter) - 40px); }
   .hw-dot { display: none; }
   .hw-stop-title {
     margin: 0 0 12px; font-family: 'Alumni', 'Madani', sans-serif; font-weight: 400;
@@ -101,8 +97,8 @@ const SNAKE_D = `M 540 -60 C 540 160, 780 200, 780 340 C 780 470, 220 480, 220 6
   @media (max-width: 1199px) {
     .hw-sun-halo { width: 380px; height: 380px; }
     .hw-sun { width: 190px; height: 190px; }
-    .hw-stage { width: min(760px, 100%); margin-top: -30px; }
-    .hw-stop { width: 250px; }
+    .hw-stage { width: min(840px, 100%); height: 950px; margin-top: -30px; }
+    .hw-stop { width: 220px; }
     .hw-stop-desc span:first-child { display: inline; }
   }
 
@@ -112,14 +108,14 @@ const SNAKE_D = `M 540 -60 C 540 160, 780 200, 780 340 C 780 470, 220 480, 220 6
     .hw-sun-halo { display: none; }
     .hw-sun { left: 170px; top: -14px; width: 160px; height: 160px; transform: none; box-shadow: 0 0 40px 8px rgba(255,140,60,.3), 0 0 120px 40px rgba(255,120,60,.12); }
     .hw-title { font-size: 104px; letter-spacing: 1px; }
-    .hw-stage { width: auto; aspect-ratio: auto; margin: 72px 0 0; }
-    .hw-svg { display: none; }
+    .hw-stage { width: auto; height: auto; margin: 72px 0 0; }
+    .hw-svg, .hw-ball { display: none; }
     .hw-stops { position: relative; max-width: 560px; padding-left: 48px; }
     .hw-stops::before {
       content: ""; position: absolute; left: 7px; top: 10px; bottom: 40px; width: 2px; border-radius: 2px;
       background: linear-gradient(180deg, #ffcf85, #ff8a3a 50%, #df5435); box-shadow: 0 0 10px rgba(255,138,58,.5);
     }
-    .hw-stop, .hw-stop-left, .hw-stop-right { position: relative; left: auto; top: auto; width: auto; transform: none; text-align: left; padding-bottom: 40px; }
+    .hw-stop, .hw-stop-left, .hw-stop-right { position: relative; left: auto; top: auto; width: auto; max-width: none; transform: none; text-align: left; padding-bottom: 40px; }
     .hw-dot {
       display: block; position: absolute; left: -48px; top: 14px; width: 16px; height: 16px; border-radius: 50%;
       background: #5a3a2a; transition: background .4s ease, box-shadow .4s ease;
@@ -144,7 +140,7 @@ const SNAKE_D = `M 540 -60 C 540 160, 780 200, 780 340 C 780 470, 220 480, 220 6
   const line  = document.querySelector<SVGPathElement>('[data-hw-line]');
   const glow  = document.querySelector<SVGPathElement>('[data-hw-line-glow]');
   const stops = Array.from(document.querySelectorAll<HTMLElement>('[data-hw-stop]'));
-  const balls = Array.from(document.querySelectorAll<SVGGElement>('[data-hw-ball]'));
+  const balls = Array.from(document.querySelectorAll<HTMLElement>('[data-hw-ball]'));
   const timeline = () => window.matchMedia('(max-width: 899px)').matches;
 
   if (stage && line) {
