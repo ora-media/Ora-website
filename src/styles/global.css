@@ -108,25 +108,19 @@ img { display: block; max-width: 100%; }
   transition: transform .22s ease, filter .22s ease, border-color .22s ease;
   -webkit-tap-highlight-color: transparent;
 }
-/* Rotating conic sweep — three brand colors bouncing around. Sits
-   behind the label but above the dark base, blended so the text stays
-   legible while the colour animation reads clearly. */
+/* Rotating colour blobs — three small brand-tinted highlights that
+   drift around the pill. Most of the surface stays a clean dark glass
+   so the colour only touches parts of the button at a time. */
 .cta-btn::before {
   content: "";
-  position: absolute; inset: -140%; z-index: -1;
-  background: conic-gradient(
-    from 0deg,
-    var(--ember),
-    var(--orange),
-    var(--violet),
-    var(--orange),
-    var(--ember),
-    var(--violet),
-    var(--ember)
-  );
-  filter: blur(14px) saturate(140%);
-  opacity: .9;
-  animation: ctaSpin 9s linear infinite;
+  position: absolute; inset: -60%; z-index: -1;
+  background:
+    radial-gradient(circle at 20% 50%, var(--ember)  0%, transparent 18%),
+    radial-gradient(circle at 70% 30%, var(--orange) 0%, transparent 16%),
+    radial-gradient(circle at 60% 80%, var(--violet) 0%, transparent 20%);
+  filter: blur(18px) saturate(130%);
+  opacity: .7;
+  animation: ctaSpin 11s linear infinite;
   mix-blend-mode: screen;
 }
 /* Pulsing inner highlight — soft bright blob that fades in/out to
