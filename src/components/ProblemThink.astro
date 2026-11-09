@@ -1,7 +1,4 @@
 ---
-// One section, pure-black background (BaseLayout shows through).
-// Two views (Problem / How We Think) stack in the same grid cell, so the
-// swap is a real cross-fade — no layout jump, no display:none.
 const problemPoints = [
   'Content being created just to "stay active"',
   "Shoots that look good but don't say anything",
@@ -18,17 +15,15 @@ const thinkPoints = [
   <div class="container">
     <div class="pt-stack">
       <article class="pt-view is-active" data-view="problem">
-        <div class="pt-head">
-          <h2 class="pt-title">The Problem</h2>
-          <button class="cta-btn pt-switch" data-switch>How We Think</button>
-        </div>
-        <div class="pt-body">
-          <p class="pt-lead">We've seen this a lot:</p>
-          <ul class="pt-list">
-            {problemPoints.map(p => (
-              <li><span class="pt-dot"></span>{p}</li>
-            ))}
-          </ul>
+        <div class="pt-grid">
+          <div class="pt-head">
+            <h2 class="h2">The Problem</h2>
+            <button class="cta-btn" data-switch>How We Think <span class="arrow">→</span></button>
+          </div>
+          <div class="pt-body">
+            <p class="pt-lead">We've seen this a lot:</p>
+            <ul class="pt-list">{problemPoints.map(p => <li><span class="pt-dot"></span>{p}</li>)}</ul>
+          </div>
         </div>
         <div class="pt-punch">
           <p class="pt-punch-a">Everything is happening…</p>
@@ -36,18 +31,16 @@ const thinkPoints = [
         </div>
       </article>
 
-      <article class="pt-view" data-view="think">
-        <div class="pt-head">
-          <h2 class="pt-title">How We Think</h2>
-          <button class="cta-btn pt-switch" data-switch>The Problem</button>
-        </div>
-        <div class="pt-body">
-          <p class="pt-lead">We look at:</p>
-          <ul class="pt-list">
-            {thinkPoints.map(p => (
-              <li><span class="pt-dot"></span>{p}</li>
-            ))}
-          </ul>
+      <article class="pt-view" data-view="think" aria-hidden="true">
+        <div class="pt-grid">
+          <div class="pt-head">
+            <h2 class="h2">How We Think</h2>
+            <button class="cta-btn" data-switch><span class="arrow">←</span> The Problem</button>
+          </div>
+          <div class="pt-body">
+            <p class="pt-lead">We look at:</p>
+            <ul class="pt-list">{thinkPoints.map(p => <li><span class="pt-dot"></span>{p}</li>)}</ul>
+          </div>
         </div>
         <div class="pt-punch">
           <p class="pt-punch-b">Then we build from there.</p>
@@ -58,105 +51,62 @@ const thinkPoints = [
 </section>
 
 <style>
-  .pt-section {
-    position: relative;
-    padding: 160px 0;
-    background: transparent;   /* BaseLayout's pure black shows through */
-    overflow: hidden;
-  }
-
-  /* Grid-stack pattern: both views share the SAME grid cell, so the container
-     naturally sizes to the taller view, no absolute-positioning tricks. */
-  .pt-stack {
-    display: grid;
-    grid-template-areas: "stack";
-  }
+  .pt-section { position: relative; padding: var(--section) 0; overflow: hidden; }
+  .pt-stack { display: grid; }
   .pt-view {
-    grid-area: stack;
-    opacity: 0;
-    transform: translateY(14px);
-    filter: blur(2px);
-    pointer-events: none;
-    transition:
-      opacity .55s cubic-bezier(.2,.7,.2,1),
-      transform .55s cubic-bezier(.2,.7,.2,1),
-      filter .55s ease;
-    will-change: opacity, transform, filter;
+    grid-area: 1 / 1;
+    opacity: 0; transform: translateY(14px); pointer-events: none;
+    transition: opacity .55s var(--ease), transform .55s var(--ease);
   }
-  .pt-view.is-active {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-    pointer-events: auto;
-    /* Small delay on the incoming so it enters as the outgoing exits. */
-    transition-delay: .08s;
-  }
+  .pt-view.is-active { opacity: 1; transform: none; pointer-events: auto; transition-delay: .08s; }
 
-  .pt-head {
-    display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
-    margin-bottom: 44px;
-  }
-  .pt-title {
-    font-family: 'Madani'; font-weight: 900;
-    font-size: clamp(44px, 5.5vw, 84px);
-    letter-spacing: -2px; margin: 0; color: #F3EDE4;
-  }
-  .pt-switch {
-    padding: 16px 22px;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .pt-body { max-width: 640px; }
-  .pt-lead {
-    font-family: 'Madani'; font-weight: 500; font-size: 20px;
-    color: #cfc7be; margin: 0 0 26px;
-  }
-  .pt-list {
-    list-style: none; margin: 0; padding: 0;
-    display: flex; flex-direction: column; gap: 22px;
-  }
+  .pt-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 80px; align-items: start; }
+  .pt-head { display: flex; flex-direction: column; align-items: flex-start; gap: 32px; }
+  .pt-body { padding-top: 14px; }
+  .pt-lead { margin: 0 0 28px; font-weight: 500; font-size: 20px; line-height: 1.4; color: #cfc7be; }
+  .pt-list { list-style: none; margin: 0; padding: 0; }
   .pt-list li {
-    display: flex; align-items: center; gap: 16px;
-    font-family: 'Madani'; font-weight: 400;
-    font-size: clamp(17px, 1.4vw, 22px);
-    color: #b8b0a7;
+    display: flex; align-items: center; gap: 18px; padding: 20px 0;
+    border-top: 1px solid rgba(255,255,255,.07);
+    font-weight: 400; font-size: 21px; line-height: 1.4; color: var(--body);
   }
   .pt-dot {
-    flex: 0 0 auto; width: 14px; height: 14px; border-radius: 50%;
+    flex: none; width: 12px; height: 12px; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffcf9c, #b8532a);
-    box-shadow: 0 0 12px rgba(223,84,53,0.6);
+    box-shadow: 0 0 12px rgba(223,84,53,.6);
   }
+  .pt-punch { margin-top: 120px; }
+  .pt-punch p { margin: 0; font-size: clamp(30px, 3.9vw, 56px); line-height: 1.1; letter-spacing: -0.02em; }
+  .pt-punch-a { font-weight: 400; color: var(--muted); margin-bottom: 8px !important; }
+  .pt-punch-b { font-weight: 700; color: var(--ember); }
 
-  .pt-punch { margin-top: 120px; max-width: 900px; }
-  .pt-punch-a {
-    font-family: 'Madani'; font-weight: 400;
-    font-size: clamp(30px, 3.6vw, 54px);
-    color: #8a827a; margin: 0 0 10px;
-    letter-spacing: -1px;
+  @media (max-width: 1199px) { .pt-grid { gap: 48px; } .pt-punch { margin-top: 88px; } }
+  @media (max-width: 899px) {
+    .pt-grid { grid-template-columns: 1fr; gap: 36px; }
+    .pt-body { padding-top: 0; }
+    .pt-punch { margin-top: 72px; }
   }
-  .pt-punch-b {
-    font-family: 'Madani'; font-weight: 700;
-    font-size: clamp(28px, 3.4vw, 54px);
-    color: #df5435; margin: 0;
-    letter-spacing: -1px;
-  }
-
-  @media (max-width: 900px) {
-    .pt-section { padding: 100px 0; }
-    .pt-head { margin-bottom: 28px; }
-    .pt-punch { margin-top: 60px; }
+  @media (max-width: 599px) {
+    .pt-head { gap: 20px; }
+    .pt-lead { margin-bottom: 8px; font-size: 17px; }
+    .pt-list li { gap: 14px; padding: 16px 0; font-size: 17px; }
+    .pt-dot { width: 10px; height: 10px; }
+    .pt-punch { margin-top: 56px; }
   }
 </style>
 
 <script>
-  // Just flip .is-active on the two stacked views. The CSS handles the cross-fade.
   const views = Array.from(document.querySelectorAll<HTMLElement>('#problem [data-view]'));
   document.querySelectorAll<HTMLButtonElement>('#problem [data-switch]').forEach(btn => {
     btn.addEventListener('click', () => {
       const cur = views.find(v => v.classList.contains('is-active'))?.dataset.view;
       const next = cur === 'problem' ? 'think' : 'problem';
-      for (const v of views) v.classList.toggle('is-active', v.dataset.view === next);
+      for (const v of views) {
+        const on = v.dataset.view === next;
+        v.classList.toggle('is-active', on);
+        v.setAttribute('aria-hidden', String(!on));
+      }
+      views.find(v => v.dataset.view === next)?.querySelector<HTMLButtonElement>('[data-switch]')?.focus({ preventScroll: true });
     });
   });
 </script>

@@ -8,9 +8,11 @@ import OraLogo from './OraLogo.astro';
       <p class="footer-tag">Content, strategy and growth built as one system. Let's make something that actually moves.</p>
     </div>
     <div class="footer-cta">
-      <button class="cta-btn" data-open-modal>Get Started</button>
-      <a href="mailto:info@oramedia.net" class="footer-email">info@oramedia.net</a>
-      <a href="tel:+971556370357" class="footer-email">+971 55 637 0357</a>
+      <div class="footer-contact">
+        <a href="mailto:info@oramedia.net">info@oramedia.net</a>
+        <a href="tel:+971556370357">+971 55 637 0357</a>
+      </div>
+      <button class="cta-btn lg" data-open-modal>Get Started</button>
     </div>
   </div>
   <div class="container footer-bottom">
@@ -22,32 +24,37 @@ import OraLogo from './OraLogo.astro';
 <style>
   .site-footer {
     position: relative; z-index: 1;
-    padding: 90px 0 46px;
-    background: transparent;    /* let the site-wide gradient show through */
+    padding: 100px 0 44px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    background: linear-gradient(180deg, rgba(255,255,255,0), rgba(223,84,53,.05));
   }
-  .footer-top {
-    display: flex; flex-wrap: wrap; gap: 40px;
-    justify-content: space-between; align-items: flex-end;
-  }
-  .footer-tag {
-    font-family: 'Madani'; font-weight: 400; font-size: 16px;
-    color: #8a827a; margin: 16px 0 0;
-    max-width: 340px; line-height: 1.6;
-  }
-  .footer-cta { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-  .footer-email {
-    font-family: 'Madani'; font-weight: 500; font-size: 16px;
-    color: #b8b0a7;
-  }
+  .footer-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+  .footer-tag { margin: 20px 0 0; max-width: 360px; font-weight: 400; font-size: 17px; line-height: 1.6; color: var(--muted); }
+  .footer-cta { display: flex; align-items: center; gap: 32px; }
+  .footer-contact { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .footer-contact a { font-weight: 500; font-size: 17px; line-height: 1; color: var(--body); transition: color .2s ease; }
+  .footer-contact a:hover { color: var(--orange); }
   .footer-bottom {
-    margin-top: 50px; padding-top: 24px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    font-family: 'Madani'; font-weight: 400; font-size: 14px;
-    color: #6a635c;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px;
+    margin-top: 64px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.06);
+    font-weight: 400; font-size: 14px; line-height: 1.4; color: var(--faint);
   }
-  @media (max-width: 700px) {
-    .site-footer { padding: 60px 0 30px; }
-    .footer-top { flex-direction: column; align-items: flex-start; }
+
+  @media (max-width: 1199px) { .site-footer { padding: 80px 0 40px; } }
+  @media (max-width: 899px) {
+    .site-footer { padding: 72px 0 36px; }
+    .footer-top { flex-direction: column; align-items: flex-start; gap: 36px; }
+    .footer-contact { align-items: flex-start; }
+  }
+  @media (max-width: 599px) {
+    .site-footer { padding: 64px 0 32px; }
+    .footer-brand :global(svg) { height: 44px !important; }
+    .footer-tag { margin: 18px 0 0; font-size: 16px; }
+    .footer-top { gap: 32px; }
+    .footer-cta { flex-direction: column-reverse; align-items: stretch; gap: 16px; width: 100%; }
+    .footer-cta .cta-btn { width: 100%; height: 56px; }
+    .footer-contact { gap: 0; }
+    .footer-contact a { display: flex; align-items: center; min-height: 48px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .footer-bottom { flex-direction: column; margin-top: 28px; padding-top: 0; border-top: 0; font-size: 13px; }
   }
 </style>

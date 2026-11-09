@@ -1,17 +1,19 @@
 ---
 ---
-<div class="ora-modal" data-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Contact Ora">
+<div class="ora-modal" data-modal hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ora-modal-title">
   <div class="ora-modal-panel" data-modal-panel>
     <div class="ora-modal-head">
-      <h3>Let's talk</h3>
-      <button class="ora-modal-x" aria-label="Close" data-modal-close>×</button>
+      <h3 id="ora-modal-title">Let's talk</h3>
+      <button class="ora-modal-x" aria-label="Close" data-modal-close>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <div class="ora-modal-body" data-modal-body>
       <p class="ora-modal-lead">Tell us a little about your brand and what you're trying to move.</p>
       <form data-contact-form>
-        <input name="name" required placeholder="Your name" />
-        <input name="email" type="email" required placeholder="Email" />
-        <input name="brand" placeholder="Brand / company" />
+        <input name="name" required placeholder="Your name" autocomplete="name" />
+        <input name="email" type="email" required placeholder="Email" autocomplete="email" />
+        <input name="brand" placeholder="Brand / company" autocomplete="organization" />
         <textarea name="message" rows="3" placeholder="What are you trying to grow?"></textarea>
         <button type="submit" class="ora-submit">Send message</button>
       </form>
@@ -25,108 +27,98 @@
 <style>
   .ora-modal {
     position: fixed; inset: 0; z-index: 200;
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    background: rgba(4,3,2,0.72);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    animation: fadeUp .3s ease both;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    background: rgba(4,3,2,.72);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    animation: modalIn .3s ease both;
   }
   .ora-modal[hidden] { display: none; }
+  @keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
   .ora-modal-panel {
     width: 100%; max-width: 520px; padding: 44px;
     max-height: calc(100vh - 32px); overflow-y: auto;
     border-radius: 24px;
-    background: radial-gradient(120% 100% at 0% 0%, rgba(223,84,53,0.14), transparent 55%), linear-gradient(180deg,#161311,#0c0a08);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+    background: radial-gradient(120% 100% at 0% 0%, rgba(223,84,53,.14), transparent 55%), linear-gradient(180deg, #161311, #0c0a08);
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 40px 120px rgba(0,0,0,.7);
+    animation: fadeUp .4s var(--ease) both;
   }
-  @media (max-width: 600px) {
-    .ora-modal { padding: 16px; }
-    .ora-modal-panel { padding: 28px 22px; border-radius: 20px; }
-    .ora-modal-head h3 { font-size: 26px; }
-    .ora-modal-lead { font-size: 14px; margin-bottom: 20px; }
-  }
-  .ora-modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .ora-modal-head h3 {
-    font-family: 'Madani'; font-weight: 900; font-size: 34px;
-    margin: 0; color: #F3EDE4; letter-spacing: -1px;
-  }
+  .ora-modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .ora-modal-head h3 { margin: 0; font-weight: 900; font-size: 36px; line-height: 1; letter-spacing: -1px; color: var(--cream); }
   .ora-modal-x {
-    background: transparent; border: 0; color: #8a827a;
-    font-size: 26px; cursor: pointer; line-height: 1;
+    width: 44px; height: 44px; margin: -8px -10px 0 0; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: 0; color: var(--muted); cursor: pointer;
+    transition: background .2s ease, color .2s ease;
   }
-  .ora-modal-lead {
-    font-family: 'Madani'; font-weight: 400; font-size: 16px;
-    color: #a89f96; margin: 0 0 26px;
-  }
-  .ora-modal-body form {
-    display: flex; flex-direction: column; gap: 14px;
-  }
+  .ora-modal-x:hover { background: rgba(255,255,255,.06); color: var(--cream); }
+  .ora-modal-x:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .ora-modal-lead { margin: 0 0 28px; font-weight: 400; font-size: 16px; line-height: 1.5; color: #a89f96; }
+  .ora-modal-body form { display: flex; flex-direction: column; gap: 12px; }
   .ora-modal-body input, .ora-modal-body textarea {
-    font-family: 'Madani'; font-size: 16px; color: #F3EDE4;
-    padding: 14px 18px; border-radius: 12px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    outline: none;
+    font-family: 'Madani', sans-serif; font-size: 16px; color: var(--cream);
+    border-radius: 12px; outline: none;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
   }
-  .ora-modal-body textarea { resize: vertical; }
+  .ora-modal-body input { height: 52px; padding: 0 18px; }
+  .ora-modal-body textarea { padding: 14px 18px; line-height: 1.5; resize: vertical; }
+  .ora-modal-body input::placeholder, .ora-modal-body textarea::placeholder { color: #7a726b; }
+  .ora-modal-body input:hover, .ora-modal-body textarea:hover { border-color: rgba(255,255,255,.2); }
   .ora-modal-body input:focus, .ora-modal-body textarea:focus {
-    border-color: rgba(255,140,60,0.6);
+    border-color: rgba(255,147,23,.7); background: rgba(255,255,255,.06);
+    box-shadow: 0 0 0 4px rgba(255,147,23,.12);
   }
   .ora-submit {
-    margin-top: 6px;
-    font-family: 'Madani'; font-weight: 700; font-size: 17px;
-    padding: 15px; color: #fff;
-    border-radius: 12px;
-    border: 1px solid rgba(255,170,90,0.4);
-    background: linear-gradient(180deg,#df5435,#8a3418);
-    box-shadow: 0 8px 26px rgba(200,70,20,0.4);
-    cursor: pointer; transition: filter .2s;
+    margin-top: 6px; height: 54px; border-radius: 12px; cursor: pointer;
+    font-family: 'Madani', sans-serif; font-weight: 700; font-size: 17px; color: #fff;
+    border: 1px solid rgba(255,170,90,.4);
+    background: linear-gradient(180deg, #df5435, #8a3418);
+    box-shadow: 0 8px 26px rgba(200,70,20,.4);
+    transition: filter .2s ease, transform .2s ease;
   }
-  .ora-submit:hover { filter: brightness(1.12); }
-  .ora-modal-sent p {
-    font-family: 'Madani'; font-weight: 500; font-size: 18px;
-    color: #df5435; margin: 20px 0 0;
+  .ora-submit:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  .ora-submit:active { transform: scale(.985); }
+  .ora-submit:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+  .ora-modal-sent p { margin: 20px 0 0; font-weight: 500; font-size: 18px; line-height: 1.5; color: var(--ember); }
+
+  @media (max-width: 599px) {
+    .ora-modal { padding: 12px; align-items: flex-end; }
+    .ora-modal-panel { padding: 28px 20px 24px; border-radius: 20px; }
+    .ora-modal-head h3 { font-size: 28px; }
+    .ora-modal-lead { font-size: 15px; margin-bottom: 20px; }
   }
 </style>
 
 <script>
   const modal = document.querySelector<HTMLElement>('[data-modal]');
-  const panel = document.querySelector<HTMLElement>('[data-modal-panel]');
-  const body = document.querySelector<HTMLElement>('[data-modal-body]');
-  const sent = document.querySelector<HTMLElement>('[data-modal-sent]');
-  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  const body  = document.querySelector<HTMLElement>('[data-modal-body]');
+  const sent  = document.querySelector<HTMLElement>('[data-modal-sent]');
+  const form  = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  let lastFocus: HTMLElement | null = null;
 
   const open = () => {
     if (!modal) return;
+    lastFocus = document.activeElement as HTMLElement;
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    (modal.querySelector<HTMLInputElement>('input')) ?.focus();
+    modal.querySelector<HTMLInputElement>('input')?.focus();
   };
   const close = () => {
     if (!modal) return;
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    lastFocus?.focus();
   };
 
-  document.querySelectorAll<HTMLElement>('[data-open-modal]').forEach(el =>
-    el.addEventListener('click', open)
-  );
-  document.querySelectorAll<HTMLElement>('[data-modal-close]').forEach(el =>
-    el.addEventListener('click', close)
-  );
-  modal?.addEventListener('click', (e) => {
-    if (e.target === modal) close();
-  });
-  panel?.addEventListener('click', (e) => e.stopPropagation());
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal && !modal.hidden) close();
-  });
+  document.querySelectorAll<HTMLElement>('[data-open-modal]').forEach(el => el.addEventListener('click', open));
+  document.querySelectorAll<HTMLElement>('[data-modal-close]').forEach(el => el.addEventListener('click', close));
+  modal?.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal && !modal.hidden) close(); });
 
-  form?.addEventListener('submit', (e) => {
+  form?.addEventListener('submit', e => {
     e.preventDefault();
     if (body && sent) { body.hidden = true; sent.hidden = false; }
   });
