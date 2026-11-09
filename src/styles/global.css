@@ -85,27 +85,73 @@ img { display: block; max-width: 100%; }
 }
 
 /* ────────────────────────────────────────────────────────────
-   Glass button (Get Started + toggles) — CSS only, no PNG.
+   Animated gradient button — ember/orange/violet conic sweep
+   under a translucent frame. CSS-only; no markup changes.
    ──────────────────────────────────────────────────────────── */
 .cta-btn {
-  position: relative;
+  --rad: 999px;
+  position: relative; isolation: isolate; overflow: hidden;
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   height: 48px; padding: 0 26px;
   white-space: nowrap;
   font-family: 'Madani', sans-serif; font-weight: 700; font-size: 15px; line-height: 1;
-  color: #f6f2ea;
-  background: url('/images/btn-glass.png') center / 100% 100% no-repeat;
-  border: 0;
-  border-radius: 999px;
+  color: var(--cream);
+  background: #0a0710;
+  border: 1.5px solid rgba(255,255,255,.28);
+  border-radius: var(--rad);
   cursor: pointer;
-  transition: transform .22s ease, filter .22s ease;
+  text-shadow: 0 0 10px rgba(255,255,255,.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),
+    inset 0 -6px 14px rgba(0,0,0,.6),
+    0 10px 28px rgba(0,0,0,.4);
+  transition: transform .22s ease, filter .22s ease, border-color .22s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.cta-btn:hover  { color: #fff; transform: translateY(-1px); filter: brightness(1.08); }
-.cta-btn:active { transform: translateY(0) scale(.985); filter: brightness(.96); }
+/* Rotating conic sweep — three brand colors bouncing around. Sits
+   behind the label but above the dark base, blended so the text stays
+   legible while the colour animation reads clearly. */
+.cta-btn::before {
+  content: "";
+  position: absolute; inset: -140%; z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    var(--ember),
+    var(--orange),
+    var(--violet),
+    var(--orange),
+    var(--ember),
+    var(--violet),
+    var(--ember)
+  );
+  filter: blur(14px) saturate(140%);
+  opacity: .9;
+  animation: ctaSpin 9s linear infinite;
+  mix-blend-mode: screen;
+}
+/* Pulsing inner highlight — soft bright blob that fades in/out to
+   suggest a liquid shimmer across the pill. */
+.cta-btn::after {
+  content: "";
+  position: absolute; left: 10%; right: 10%; top: 2px; height: 55%;
+  border-radius: var(--rad);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.45), rgba(255,255,255,0) 70%);
+  pointer-events: none;
+  animation: ctaPulse 3.6s ease-in-out infinite;
+}
+.cta-btn:hover  { color: #fff; transform: translateY(-1px); border-color: rgba(255,255,255,.4); filter: brightness(1.08); }
+.cta-btn:active { transform: translateY(0) scale(.985); filter: brightness(.95); }
 .cta-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
 .cta-btn.lg { height: 52px; padding: 0 30px; font-size: 16px; }
-.cta-btn .arrow { color: var(--orange); }
+.cta-btn .arrow { color: var(--cream); }
+
+@keyframes ctaSpin  { to { transform: rotate(360deg); } }
+@keyframes ctaPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-btn::before { animation: none; }
+  .cta-btn::after  { animation: none; }
+}
 
 /* ────────────────────────────────────────────────────────────
    Layout helpers
