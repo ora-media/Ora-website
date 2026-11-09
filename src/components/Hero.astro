@@ -32,7 +32,6 @@ const RING_D = "M261.99,1412.28c-34.91-124.66-36.59-249.98-4.03-375.01,49.12-188
     <div class="hero-copy">
       <h1 class="hero-title">Not Just<br />Content</h1>
       <p class="hero-sub">Most brands today are posting, shooting, boosting…<br />but still not growing.<br />That&rsquo;s where we come in.</p>
-      <button class="cta-btn lg hero-cta" data-open-modal>Get Started</button>
     </div>
 
     {objects.map((o) => (
@@ -101,8 +100,6 @@ const RING_D = "M261.99,1412.28c-34.91-124.66-36.59-249.98-4.03-375.01,49.12-188
     font-family: 'Madani'; font-weight: 400; font-size: 20px; line-height: 1.6;
     color: #d8d0c7; text-shadow: 0 2px 20px rgba(0,0,0,.8); text-wrap: pretty;
   }
-  .hero-cta { margin-top: 40px; pointer-events: auto; }
-
   .hero-obj { position: absolute; z-index: 5; opacity: 0; will-change: transform, opacity; }
   .hero-obj img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 6px 20px rgba(0,0,0,.5)); }
   .hero-obj-float { width: 100%; height: 100%; }
@@ -134,7 +131,6 @@ const RING_D = "M261.99,1412.28c-34.91-124.66-36.59-249.98-4.03-375.01,49.12-188
     .hero-copy { padding-top: 124px; }
     .hero-title { font-size: clamp(52px, 16.4vw, 64px); letter-spacing: -2px; line-height: .95; }
     .hero-sub { margin-top: 22px; font-size: 17px; line-height: 1.55; max-width: none; }
-    .hero-cta { display: none; }   /* CTA lives in the header on phones */
     /* Ring: 180vw wide, centered */
     .hero-o { left: calc(-40vw - 100px); right: calc(-40vw - 100px); padding: 100px; bottom: calc(-28vw - 100px); }
     .hero-o svg { filter: drop-shadow(0 0 40px rgba(255,120,40,.45)); }
