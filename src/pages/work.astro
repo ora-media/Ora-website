@@ -368,46 +368,61 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   .w-filters { padding-top: 56px; }
   .w-scroll { scrollbar-width: none; }
   .w-scroll::-webkit-scrollbar { display: none; }
-  .w-tabs { display: flex; gap: 44px; border-bottom: 1px solid rgba(255,255,255,.08); }
-  .w-tab {
-    position: relative; flex: none; appearance: none; background: none; border: 0; cursor: pointer;
-    padding: 0 0 22px; white-space: nowrap;
-    font-family: 'Madani', sans-serif; font-weight: 900; font-size: 40px; line-height: 1; letter-spacing: -1px;
-    color: #5f5852; transition: color .25s ease;
+  .w-tabs { display: flex; gap: 12px; }
+  /* Shared glass base for tabs + chips — matches .cta-btn */
+  .w-tab, .w-chip {
+    position: relative; isolation: isolate; overflow: hidden;
+    flex: none; appearance: none; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Madani', sans-serif; line-height: 1;
+    color: var(--cream);
+    background: rgba(10,7,16,.18);
+    border: 1.5px solid rgba(255,255,255,.22);
+    border-radius: 999px;
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.22),
+      inset 0 -4px 10px rgba(0,0,0,.2),
+      0 6px 18px rgba(0,0,0,.3);
+    text-shadow: 0 0 8px rgba(0,0,0,.5);
+    transition: transform .22s ease, border-color .22s ease, filter .22s ease, opacity .22s ease;
+    -webkit-tap-highlight-color: transparent;
   }
-  .w-tab::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px;
-    background: #ff9317; transform: scaleX(0); transform-origin: left;
-    transition: transform .4s cubic-bezier(.2,.7,.2,1);
+  .w-tab { height: 48px; padding: 0 22px; font-weight: 800; font-size: 16px; letter-spacing: -.2px; }
+  .w-chip { height: 40px; padding: 0 18px; font-weight: 600; font-size: 14px; }
+
+  .w-tab:hover, .w-chip:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.34); filter: brightness(1.08); }
+  .w-tab:active, .w-chip:active { transform: translateY(0) scale(.97); }
+  .w-tab:focus-visible, .w-chip:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+  /* Active = animated colour blobs + specular pulse (matches .cta-btn) */
+  .w-tab.is-active::before,
+  .w-chip.is-active::before {
+    content: ""; position: absolute; inset: -60%; z-index: -1;
+    background:
+      radial-gradient(circle at 20% 50%, var(--ember)  0%, transparent 18%),
+      radial-gradient(circle at 70% 30%, var(--orange) 0%, transparent 16%),
+      radial-gradient(circle at 60% 80%, var(--violet) 0%, transparent 20%);
+    filter: blur(18px) saturate(130%);
+    opacity: .7;
+    animation: ctaSpin 11s linear infinite;
+    mix-blend-mode: screen;
   }
-  .w-tab:hover { color: #F3EDE4; }
-  .w-tab.is-active { color: #F3EDE4; }
-  .w-tab.is-active::after { transform: scaleX(1); }
-  .w-tab:focus-visible { outline: 2px solid #ff9317; outline-offset: 4px; border-radius: 4px; }
-  .w-tab.is-unavailable { color: #2e2a2e; }
-  .w-tab-hint {
-    position: absolute; left: 0; bottom: 4px;
-    font-weight: 500; font-size: 12px; letter-spacing: 0; color: #6a635c;
-    opacity: 0; transition: opacity .2s ease; pointer-events: none;
+  .w-tab.is-active::after,
+  .w-chip.is-active::after {
+    content: ""; position: absolute; left: 10%; right: 10%; top: 2px; height: 55%;
+    border-radius: 999px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.4), rgba(255,255,255,0) 70%);
+    pointer-events: none;
+    animation: ctaPulse 3.6s ease-in-out infinite;
   }
-  .w-tab.is-unavailable .w-tab-hint { opacity: 1; }
+
+  .w-tab.is-unavailable { opacity: .35; filter: grayscale(.4); }
+  .w-tab-hint { display: none; }
 
   .w-chiprow { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 24px; }
   .w-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .w-chip {
-    flex: none; appearance: none; white-space: nowrap; cursor: pointer;
-    height: 44px; padding: 0 18px; border-radius: 999px;
-    font-family: 'Madani', sans-serif; font-weight: 600; font-size: 14px; line-height: 1;
-    color: #c3bbb2; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
-    transition: background .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .2s ease;
-  }
-  .w-chip:hover { color: #fff; transform: translateY(-1px); border-color: rgba(255,255,255,.18); }
-  .w-chip:active { transform: scale(.97); }
-  .w-chip:focus-visible { outline: 2px solid #ff9317; outline-offset: 2px; }
-  .w-chip.is-active {
-    color: #fff; background: linear-gradient(180deg,#4c4844,#201d1a); border-color: rgba(255,147,23,.5);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.24), inset 0 -3px 7px rgba(0,0,0,.6), 0 0 22px rgba(255,120,40,.18);
-  }
   .w-chip[hidden] { display: none; }
   .w-count { flex: none; font-family: 'Madani', sans-serif; font-weight: 500; font-size: 14px; color: #8a827a; }
 
@@ -520,7 +535,6 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   /* ── Responsive ─────────────────────────────────────────────────── */
   @media (max-width: 1100px) {
     .w-masonry { columns: 3; }
-    .w-tab { font-size: 32px; }
   }
   @media (max-width: 800px) {
     .w-hero { aspect-ratio: 4 / 5; max-height: 78vh; min-height: 0; }
@@ -528,9 +542,8 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     .w-hero-mute { right: 20px; bottom: 34px; width: 44px; height: 44px; }
 
     .w-filters { padding-top: 28px; padding-left: 0; padding-right: 0; }
-    .w-tabs { gap: 24px; overflow-x: auto; padding: 0 20px; }
-    .w-tab { min-height: 48px; padding-bottom: 14px; font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
-    .w-tab-hint { display: none; }
+    .w-tabs { gap: 8px; overflow-x: auto; padding: 0 20px; }
+    .w-tab { scroll-snap-align: start; height: 44px; padding: 0 16px; font-size: 14px; }
     .w-chiprow { padding-top: 16px; }
     .w-chips { flex-wrap: nowrap; overflow-x: auto; padding: 0 20px 4px; scroll-snap-type: x proximity; }
     .w-chip { scroll-snap-align: start; padding: 0 16px; }
