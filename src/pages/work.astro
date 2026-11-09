@@ -335,16 +335,28 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
 
   /* ── Shared round icon button ───────────────────────────────────── */
   .w-round-btn {
+    position: relative; overflow: hidden;
     appearance: none; flex: none;
     width: 52px; height: 52px; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
     color: #fff; cursor: pointer;
-    background: rgba(5,3,8,.55);
-    border: 1px solid rgba(255,255,255,.28);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04) 55%, rgba(255,255,255,.02));
+    border: 1px solid rgba(255,255,255,.22);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 -1px 0 rgba(255,255,255,.08),
+      0 10px 24px rgba(0,0,0,.35);
+    transition: border-color .22s ease, transform .22s ease, box-shadow .22s ease;
   }
-  .w-round-btn:hover { border-color: rgba(255,147,23,.7); background: rgba(5,3,8,.75); transform: translateY(-1px); }
+  .w-round-btn::before {
+    content: ""; position: absolute; left: 10%; right: 10%; top: 1px; height: 45%;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0));
+    pointer-events: none;
+  }
+  .w-round-btn:hover { border-color: rgba(255,147,23,.55); transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -1px 0 rgba(255,255,255,.1), 0 14px 32px rgba(0,0,0,.4); }
   .w-round-btn:active { transform: scale(.96); }
   .w-round-btn:focus-visible { outline: 2px solid #ff9317; outline-offset: 3px; }
 

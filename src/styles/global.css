@@ -85,8 +85,11 @@ img { display: block; max-width: 100%; }
 }
 
 /* ────────────────────────────────────────────────────────────
-   Glass button (Get Started + toggles) — CSS only, no PNG.
+   Apple-style glass button — translucent fill, backdrop blur +
+   saturate, specular top highlight, hairline rim, soft shadow.
+   Applied via .glass-btn and the primary .cta-btn alias.
    ──────────────────────────────────────────────────────────── */
+.glass-btn,
 .cta-btn {
   position: relative;
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -94,30 +97,50 @@ img { display: block; max-width: 100%; }
   white-space: nowrap;
   font-family: 'Madani', sans-serif; font-weight: 700; font-size: 15px; line-height: 1;
   color: #f6f2ea;
-  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04) 55%, rgba(255,255,255,.02));
   border: 1px solid rgba(255,255,255,.22);
   border-radius: 999px;
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.35),
-    inset 0 -1px 0 rgba(255,255,255,.06),
-    0 10px 28px rgba(0,0,0,.35);
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(255,255,255,.08),
+    inset 0 0 0 1px rgba(255,255,255,.06),
+    0 12px 32px rgba(0,0,0,.35),
+    0 2px 6px rgba(0,0,0,.25);
   cursor: pointer;
+  overflow: hidden;
   transition: transform .22s ease, background .22s ease, border-color .22s ease, box-shadow .22s ease;
   -webkit-tap-highlight-color: transparent;
 }
+/* Top specular — a thin bright arc that reads as light caught on glass */
+.glass-btn::before,
+.cta-btn::before {
+  content: "";
+  position: absolute; left: 10%; right: 10%; top: 1px; height: 45%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0));
+  pointer-events: none;
+  opacity: .9;
+}
+.glass-btn:hover,
 .cta-btn:hover {
   color: #fff;
   transform: translateY(-1px);
-  background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.06));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.06) 55%, rgba(255,255,255,.03));
   border-color: rgba(255,255,255,.34);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.45),
-    inset 0 -1px 0 rgba(255,255,255,.08),
-    0 14px 34px rgba(255,120,40,.22);
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 -1px 0 rgba(255,255,255,.1),
+    inset 0 0 0 1px rgba(255,255,255,.08),
+    0 16px 40px rgba(255,120,40,.22),
+    0 4px 10px rgba(0,0,0,.3);
 }
+.glass-btn:active,
 .cta-btn:active { transform: translateY(0) scale(.985); }
+.glass-btn:focus-visible,
 .cta-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
 .cta-btn.lg { height: 52px; padding: 0 30px; font-size: 16px; }
 .cta-btn .arrow { color: var(--orange); }
