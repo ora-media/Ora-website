@@ -105,7 +105,10 @@ const isWideVideo = (ar?: string) => {
 
   <!-- ═══════════ HERO REEL (full-bleed) ═══════════ -->
   <section class="w-hero">
-    <video class="w-hero-video" src={`${MEDIA_BASE}/videos/work-hero.mp4`} autoplay muted loop playsinline preload="auto" data-hero-video></video>
+    <video class="w-hero-video" autoplay muted loop playsinline preload="auto" data-hero-video>
+      <source src={`${MEDIA_BASE}/videos/work-hero.webm`} type="video/webm" />
+      <source src={`${MEDIA_BASE}/videos/work-hero.mp4`} type="video/mp4" />
+    </video>
     <div class="w-hero-shade" aria-hidden="true"></div>
     <h1 class="w-hero-title">Work</h1>
     <button type="button" class="w-round-btn w-hero-mute" data-hero-mute aria-label="Unmute video" aria-pressed="true">
@@ -151,11 +154,15 @@ const isWideVideo = (ar?: string) => {
                 data-cat={`${indLabel[v.ind]} · Videography`}
                 data-desc={v.desc ?? ''}
                 data-aspect={v.aspect}
+                style={v.poster ? `background-image:url(${v.poster})` : undefined}
                 tabindex="0"
                 role="button"
                 aria-label={`Open ${v.title}`}
               >
-                <video src={`${v.src}#t=0.1`} poster={v.poster} muted loop playsinline preload="metadata"></video>
+                <video muted loop playsinline preload="none">
+                  <source src={`${v.src.replace(/\.mp4$/, '.webm')}#t=0.1`} type="video/webm" />
+                  <source src={`${v.src}#t=0.1`} type="video/mp4" />
+                </video>
                 <span class="v-progress" aria-hidden="true"></span>
               </div>
             ))}
@@ -205,11 +212,15 @@ const isWideVideo = (ar?: string) => {
                 data-cat={`${indLabel[v.ind]} · Videography`}
                 data-desc={v.desc ?? ''}
                 data-aspect={v.aspect}
+                style={v.poster ? `background-image:url(${v.poster})` : undefined}
                 tabindex="0"
                 role="button"
                 aria-label={`Open ${v.title}`}
               >
-                <video src={`${v.src}#t=0.1`} poster={v.poster} muted loop playsinline preload="metadata"></video>
+                <video muted loop playsinline preload="none">
+                  <source src={`${v.src.replace(/\.mp4$/, '.webm')}#t=0.1`} type="video/webm" />
+                  <source src={`${v.src}#t=0.1`} type="video/mp4" />
+                </video>
                 <span class="v-progress" aria-hidden="true"></span>
               </div>
             ))}
@@ -468,7 +479,12 @@ const isWideVideo = (ar?: string) => {
     }
     if (t.dataset.type === 'video') {
       const v = document.createElement('video');
-      Object.assign(v, { src, controls: true, autoplay: true, loop: true, playsInline: true });
+      Object.assign(v, { controls: true, autoplay: true, loop: true, playsInline: true });
+      const webm = document.createElement('source');
+      webm.src = src.replace(/\.mp4$/, '.webm'); webm.type = 'video/webm';
+      const mp4 = document.createElement('source');
+      mp4.src = src; mp4.type = 'video/mp4';
+      v.append(webm, mp4);
       v.addEventListener('loadedmetadata', () => { if (v.videoWidth && v.videoHeight) { w = v.videoWidth; h = v.videoHeight; fit(w, h); } }, { once: true });
       mediaEl.appendChild(v);
     } else {
@@ -714,8 +730,11 @@ const isWideVideo = (ar?: string) => {
       refresh: () => { const c = nearest(); if (c) setActive(c); },
     };
   }
-  if (sect4a) rail4a = initRail(sect4a);
+  // 5a is visible on All Work (default view); 4a only shows on Videography.
+  // Defer 4a's init until first needed to skip 46 cloneNodes + their DOM cost.
   if (sect5a) rail5a = initRail(sect5a);
+  const ensure4a = () => { if (sect4a && !rail4a) { rail4a = initRail(sect4a); apply(); } };
+  tabs.forEach(tab => { if (tab.dataset.med === 'video') tab.addEventListener('click', ensure4a, { once: true }); });
   apply();
 
   /* ── Hero mute toggle ───────────────────────────────────────────── */
@@ -1025,7 +1044,7 @@ const isWideVideo = (ar?: string) => {
     width: var(--wp); aspect-ratio: 9 / 16;
     scroll-snap-align: center;
     border-radius: 18px; overflow: hidden;
-    background: #0e0b10; cursor: pointer;
+    background: #0e0b10 center / cover no-repeat; cursor: pointer;
     border: 1px solid rgba(255,255,255,.08);
     transform: scale(.86); opacity: .4;
     transition: transform .5s cubic-bezier(.2,.7,.2,1), opacity .4s, border-color .4s, box-shadow .4s;
