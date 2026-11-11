@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import GetStartedModal from '../components/GetStartedModal.astro';
+import workVideos from '../data/work-videos.json';
 
 // Videos are served from Cloudflare R2 in production (PUBLIC_MEDIA_BASE).
 const MEDIA_BASE = import.meta.env.PUBLIC_MEDIA_BASE ?? '';
@@ -11,7 +12,7 @@ type Medium = 'photo' | 'video' | 'social';
 type Item = {
   src: string; type: Medium; ind: string; title: string;
   desc?: string; noExpand?: boolean;
-  vimeoId?: string; vimeoHash?: string; aspect?: string;
+  poster?: string; aspect?: string;
 };
 
 const industries = [
@@ -21,6 +22,8 @@ const industries = [
   { id: 'hospitality',   label: 'Hospitality' },
   { id: 'automotive',    label: 'Automotive' },
   { id: 'products',      label: 'Products' },
+  { id: 'corporate',     label: 'Corporate' },
+  { id: 'events',        label: 'Events' },
 ];
 const indLabel = Object.fromEntries(industries.map(i => [i.id, i.label]));
 const media = [
@@ -43,23 +46,32 @@ const social = [
   { id: 'mandi',     title: 'Mandi Street', desc: "Mandi Street brings traditional Yemeni mandi to a modern audience. We craft its social content across campaigns and everyday posts — from bold promo creatives to appetite-driving lifestyle imagery — building a distinctive voice that keeps the brand top-of-mind." },
 ];
 
-// Vimeo-hosted videos. padding% from the embed snippet tells us the
-// aspect: 56.25% = 16/9, 177.78% = 9/16.
-const automotiveVimeo: Item[] = [
-  { vimeoId: '1245700414', vimeoHash: 'ab09b27979', aspect: '16/9', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700414' },
-  { vimeoId: '1245700399', vimeoHash: 'a1f2118827', aspect: '16/9', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700399' },
-  { vimeoId: '1245700275', vimeoHash: '54ffcd1da4', aspect: '9/16', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700275' },
-  { vimeoId: '1245700221', vimeoHash: 'a661847562', aspect: '9/16', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700221' },
-  { vimeoId: '1245700218', vimeoHash: '42f13e8da4', aspect: '16/9', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700218' },
-  { vimeoId: '1245700217', vimeoHash: '0fd3c31339', aspect: '9/16', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700217' },
-  { vimeoId: '1245700219', vimeoHash: '5812a5b859', aspect: '16/9', type: 'video', ind: 'automotive', title: 'Automotive', src: 'https://vimeo.com/1245700219' },
-];
+// Videos hosted on R2 under videos/work/<industry>/N.mp4 (+ N.jpg poster).
+// src/data/work-videos.json carries each clip's real pixel dimensions so
+// portraits and landscapes render at their true aspect.
+const videoSet = (ind: string): Item[] => {
+  const list = (workVideos as Record<string, { n: number; w: number; h: number }[]>)[ind] ?? [];
+  return list.map(v => ({
+    src:    `${MEDIA_BASE}/videos/work/${ind}/${v.n}.mp4`,
+    poster: `${MEDIA_BASE}/videos/work/${ind}/${v.n}.jpg`,
+    aspect: `${v.w} / ${v.h}`,
+    type:   'video' as const,
+    ind,
+    title:  indLabel[ind],
+  }));
+};
 
 // Groups are interleaved round-robin so "All Work" reads as a varied wall.
 const groups: Item[][] = [
   photoSet('', [11, 11, 11, 11], 'food-beverage'),
   photoSet('automotive/', [9, 12, 13], 'automotive', ['Corvette', 'Porsche GT3', 'KTM Off-road']),
-  automotiveVimeo,
+  videoSet('automotive'),
+  videoSet('corporate'),
+  videoSet('events'),
+  videoSet('food-beverage'),
+  videoSet('hospitality'),
+  videoSet('real-estate'),
+  videoSet('schools'),
   range(8).map(n => ({ src: `${MEDIA_BASE}/images/work/video/${n}.mp4`, type: 'video' as const, ind: 'food-beverage', title: 'Food & Beverage' })),
   photoSet('real-estate/', [11, 11, 11, 11], 'real-estate'),
   social.flatMap(c => range(16).map(n => ({ src: `/images/work/social/${c.id}/${n}.jpg`, type: 'social' as const, ind: 'food-beverage', title: c.title, desc: c.desc }))),
@@ -117,29 +129,20 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
           data-cat={`${indLabel[it.ind]} · ${medLabel[it.type]}`}
           data-desc={it.desc ?? ''}
           data-src={it.src}
-          data-vimeo-id={it.vimeoId}
-          data-vimeo-hash={it.vimeoHash}
           data-aspect={it.aspect}
           tabindex={it.noExpand ? undefined : 0}
           role={it.noExpand ? undefined : 'button'}
           aria-label={it.noExpand ? undefined : `Open ${it.title}`}
         >
           <div class="g-media" style={it.aspect ? `aspect-ratio: ${it.aspect};` : undefined}>
-            {it.vimeoId ? (
+            {it.type === 'video' ? (
               <>
-                <iframe
-                  src={`https://player.vimeo.com/video/${it.vimeoId}?h=${it.vimeoHash}&badge=0&autopause=0&byline=0&title=0&portrait=0`}
-                  frameborder="0"
-                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  loading="lazy"
-                  title={it.title}
-                ></iframe>
-                <span class="g-badge"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>Video</span>
-              </>
-            ) : it.type === 'video' ? (
-              <>
-                <video src={`${it.src}#t=0.1`} muted loop playsinline preload="metadata" onerror="this.closest('.g-tile').dataset.broken=''"></video>
+                <video
+                  src={`${it.src}#t=0.1`}
+                  poster={it.poster}
+                  muted loop playsinline preload="metadata"
+                  onerror="this.closest('.g-tile').dataset.broken=''"
+                ></video>
                 <span class="g-badge"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>Video</span>
                 <span class="g-progress" aria-hidden="true"></span>
               </>
@@ -234,8 +237,8 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   // A tile that fails to load drops out of the grid and the lightbox.
   new MutationObserver(apply).observe(document.querySelector('[data-masonry]')!, { subtree: true, attributes: true, attributeFilter: ['data-broken'] });
 
-  /* ── Video tiles: muted preview on hover (mouse only, native only) ─ */
-  tiles.filter(t => t.dataset.type === 'video' && !t.dataset.vimeoId).forEach(t => {
+  /* ── Video tiles: muted preview on hover (mouse only) ───────────── */
+  tiles.filter(t => t.dataset.type === 'video').forEach(t => {
     const v = t.querySelector('video')!;
     t.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { v.muted = true; v.play().catch(() => {}); t.classList.add('is-previewing'); } });
     t.addEventListener('pointerleave', () => { v.pause(); v.currentTime = 0.1; t.classList.remove('is-previewing'); });
@@ -262,20 +265,10 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     const t = list[idx]; if (!t) return;
     const src = t.dataset.src!;
     mediaEl.innerHTML = '';
-    if (t.dataset.vimeoId) {
-      const wrap = document.createElement('div');
-      wrap.className = 'lb-vimeo';
-      if (t.dataset.aspect) wrap.style.aspectRatio = t.dataset.aspect;
-      const f = document.createElement('iframe');
-      f.src = `https://player.vimeo.com/video/${t.dataset.vimeoId}?h=${t.dataset.vimeoHash || ''}&autoplay=1&badge=0&byline=0&title=0&portrait=0`;
-      f.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share');
-      f.setAttribute('allowfullscreen', '');
-      f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-      wrap.appendChild(f);
-      mediaEl.appendChild(wrap);
-    } else if (t.dataset.type === 'video') {
+    if (t.dataset.type === 'video') {
       const v = document.createElement('video');
       Object.assign(v, { src, controls: true, autoplay: true, loop: true, playsInline: true });
+      if (t.dataset.aspect) v.style.aspectRatio = t.dataset.aspect;
       mediaEl.appendChild(v);
     } else {
       const img = document.createElement('img');
@@ -493,11 +486,10 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   .g-media img, .g-media video { display: block; width: 100%; height: auto; user-select: none; }
   .g-tile[data-type="video"] .g-media { aspect-ratio: 9 / 16; }
   .g-tile[data-type="video"] video { height: 100%; object-fit: cover; }
-  /* Vimeo iframes fill their tile; per-item aspect-ratio comes from the
-     inline style on .g-media so portrait and landscape clips both show
-     at their true shape. */
-  .g-tile[data-vimeo-id] .g-media { aspect-ratio: auto; }
-  .g-media iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  /* Per-item aspect-ratio comes from the inline style on .g-media so
+     portrait and landscape clips both show at their true shape. */
+  .g-tile[data-aspect] .g-media { aspect-ratio: unset; }
+  .g-tile[data-aspect] video { position: absolute; inset: 0; width: 100%; height: 100%; }
   .g-media { position: relative; }
 
   .g-badge {
@@ -570,16 +562,6 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     pointer-events: none;
   }
   .w-lb-media video { pointer-events: auto; }
-  /* Vimeo wrapper: hold aspect, cap to viewport. */
-  .lb-vimeo {
-    position: relative;
-    width: min(100%, calc((100vh - 260px) * 16 / 9));
-    max-width: 1400px;
-    aspect-ratio: 16 / 9;
-    border-radius: 16px; overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0,0,0,.7);
-  }
-  .lb-vimeo iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .w-lb-info {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;
     width: min(100% - 64px, 1100px); margin: 0 auto; padding: 8px 0 32px;
