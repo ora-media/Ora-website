@@ -80,10 +80,10 @@ const groups: Item[][] = [
   photoSet('products/', [11, 11, 11], 'products'),
   [
     ...photoSet('schools/', [11, 9], 'schools', ['Graduation', 'Graduation'], true),
-    // slide4 (framed) appears above slide3 (panoramic group shots). Both
-    // span the full row so they read as feature images rather than tiny
-    // tiles in a narrow column.
-    ...range(3).map(k => ({ src: `/images/work/photography/schools/slide4/${k}.jpg`, type: 'photo' as const, ind: 'schools', title: 'Graduation', noExpand: true, wide: true })),
+    // slide4 (framed) sits above the wide panoramics in the regular
+    // masonry — same tile size as every other schools photo.
+    ...range(3).map(k => ({ src: `/images/work/photography/schools/slide4/${k}.jpg`, type: 'photo' as const, ind: 'schools', title: 'Graduation', noExpand: true })),
+    // slide3 (panoramic group shots) are the only wide/feature tiles.
     ...range(3).map(k => ({ src: `/images/work/photography/schools/slide3/${k}.jpg`, type: 'photo' as const, ind: 'schools', title: 'Graduation', noExpand: true, wide: true })),
   ],
 ];
