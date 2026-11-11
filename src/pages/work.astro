@@ -78,7 +78,14 @@ const groups: Item[][] = [
   social.flatMap(c => range(16).map(n => ({ src: `/images/work/social/${c.id}/${n}.jpg`, type: 'social' as const, ind: 'food-beverage', title: c.title, desc: c.desc }))),
   photoSet('hospitality/', [11, 7], 'hospitality'),
   photoSet('products/', [11, 11, 11], 'products'),
-  photoSet('schools/', [11, 9, 3, 3], 'schools', ['Graduation', 'Graduation', 'Graduation', 'Graduation'], true, [3]),
+  [
+    ...photoSet('schools/', [11, 9], 'schools', ['Graduation', 'Graduation'], true),
+    // slide4 (framed) appears above slide3 (panoramic group shots). Both
+    // span the full row so they read as feature images rather than tiny
+    // tiles in a narrow column.
+    ...range(3).map(k => ({ src: `/images/work/photography/schools/slide4/${k}.jpg`, type: 'photo' as const, ind: 'schools', title: 'Graduation', noExpand: true, wide: true })),
+    ...range(3).map(k => ({ src: `/images/work/photography/schools/slide3/${k}.jpg`, type: 'photo' as const, ind: 'schools', title: 'Graduation', noExpand: true, wide: true })),
+  ],
 ];
 const items: Item[] = [];
 for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if (i < g.length) items.push(g[i]);
@@ -485,7 +492,9 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     column-span: all;
     -webkit-column-span: all;
     width: 100%;
-    margin-bottom: 20px;
+    /* Keep the same margin as every other tile so vertical rhythm
+       stays uniform across the whole gallery. */
+    margin-top: 0;
   }
 
   .g-media {
@@ -569,23 +578,27 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     touch-action: pan-y; cursor: grab; overflow: hidden;
   }
   .w-lb-stage:active { cursor: grabbing; }
+  /* Constrain the wrapper, let media fill 100% of it. Keeps portrait
+     and landscape at true aspect without fighting over width/height. */
   .w-lb-media {
     display: block; line-height: 0;
+    max-width: min(100%, 1280px);
+    max-height: 100%;
     transition: transform .35s cubic-bezier(.2,.7,.2,1);
   }
   .w-lb-media.is-in { animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both; }
   @keyframes wlbZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
   .w-lb-media img, .w-lb-media video {
     display: block;
-    max-width: min(calc(100vw - 64px), 1400px);
-    max-height: calc(100vh - 260px);
+    max-width: 100%;
+    max-height: calc(100vh - 220px);
     width: auto; height: auto;
     margin: 0 auto;
     border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,.7);
     pointer-events: none;
-    background: #000;
+    object-fit: contain;
   }
-  .w-lb-media video { pointer-events: auto; }
+  .w-lb-media video { pointer-events: auto; background: #000; }
   .w-lb-info {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;
     width: min(100% - 64px, 1100px); margin: 0 auto; padding: 8px 0 32px;
