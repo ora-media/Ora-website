@@ -311,12 +311,13 @@ const wideItems   = items.filter(it =>  it.wide);
     const t = list[idx]; if (!t) return;
     const src = t.dataset.src!;
     mediaEl.innerHTML = '';
+    // Use the known aspect-ratio (from the manifest) to shape the
+    // wrapper up-front so the video doesn't flash at browser default
+    // 300×150 before metadata loads.
+    mediaEl.style.aspectRatio = t.dataset.aspect || '';
     if (t.dataset.type === 'video') {
       const v = document.createElement('video');
       Object.assign(v, { src, controls: true, autoplay: true, loop: true, playsInline: true });
-      // Browser sizes <video> from its natural width/height once metadata
-      // loads; no need to force an aspect-ratio that could conflict with
-      // the max-height cap and stretch portrait clips sideways.
       mediaEl.appendChild(v);
     } else {
       const img = document.createElement('img');
@@ -610,27 +611,34 @@ const wideItems   = items.filter(it =>  it.wide);
     touch-action: pan-y; cursor: grab; overflow: hidden;
   }
   .w-lb-stage:active { cursor: grabbing; }
-  /* Constrain the wrapper, let media fill 100% of it. Keeps portrait
-     and landscape at true aspect without fighting over width/height. */
+  /* Wrapper takes the known aspect-ratio (set inline in JS from the
+     manifest). Browser sizes it against both max-width and max-height
+     so portrait and landscape both fit inside the stage correctly. */
   .w-lb-media {
     display: block; line-height: 0;
     max-width: min(100%, 1280px);
-    max-height: 100%;
+    max-height: calc(100vh - 220px);
     transition: transform .35s cubic-bezier(.2,.7,.2,1);
   }
   .w-lb-media.is-in { animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both; }
   @keyframes wlbZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
   .w-lb-media img, .w-lb-media video {
     display: block;
-    max-width: 100%;
-    max-height: calc(100vh - 220px);
-    width: auto; height: auto;
-    margin: 0 auto;
+    width: 100%; height: 100%;
+    object-fit: contain;
     border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,.7);
     pointer-events: none;
-    object-fit: contain;
+    background: #000;
   }
-  .w-lb-media video { pointer-events: auto; background: #000; }
+  /* No preset aspect (images): let intrinsic size drive within max caps */
+  .w-lb-media:not([style*="aspect-ratio"]) img,
+  .w-lb-media:not([style*="aspect-ratio"]) video {
+    width: auto; height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0 auto;
+  }
+  .w-lb-media video { pointer-events: auto; }
   .w-lb-info {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;
     width: min(100% - 64px, 1100px); margin: 0 auto; padding: 8px 0 32px;
