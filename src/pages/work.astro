@@ -89,6 +89,11 @@ const groups: Item[][] = [
 ];
 const items: Item[] = [];
 for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if (i < g.length) items.push(g[i]);
+// Wide items render in a separate flex-column container below the main
+// masonry so the multicol layout doesn't leave a tall gap trying to
+// column-span across them.
+const normalItems = items.filter(it => !it.wide);
+const wideItems   = items.filter(it =>  it.wide);
 ---
 <BaseLayout title="Work — Ora Digital Media">
   <div class="work-page-bg" aria-hidden="true"></div>
@@ -128,9 +133,9 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   <!-- ═══════════ MASONRY ═══════════ -->
   <section class="w-gallery container">
     <div class="w-masonry" data-masonry>
-      {items.map((it, i) => (
+      {normalItems.map((it, i) => (
         <figure
-          class={`g-tile ${it.noExpand ? 'no-expand' : ''} ${it.wide ? 'is-wide' : ''}`}
+          class={`g-tile ${it.noExpand ? 'no-expand' : ''}`}
           data-type={it.type}
           data-ind={it.ind}
           data-title={it.title}
@@ -169,6 +174,37 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
         </figure>
       ))}
     </div>
+    {wideItems.length > 0 && (
+      <div class="w-wide-list" data-masonry>
+        {wideItems.map(it => (
+          <figure
+            class={`g-tile is-wide ${it.noExpand ? 'no-expand' : ''}`}
+            data-type={it.type}
+            data-ind={it.ind}
+            data-title={it.title}
+            data-cat={`${indLabel[it.ind]} · ${medLabel[it.type]}`}
+            data-desc={it.desc ?? ''}
+            data-src={it.src}
+            data-aspect={it.aspect}
+            tabindex={it.noExpand ? undefined : 0}
+            role={it.noExpand ? undefined : 'button'}
+            aria-label={it.noExpand ? undefined : `Open ${it.title}`}
+          >
+            <div class="g-media" style={it.aspect ? `aspect-ratio: ${it.aspect};` : undefined}>
+              <img src={it.src} alt={`${it.title} — ${medLabel[it.type]}`} loading="lazy" decoding="async" draggable="false" onerror="this.closest('.g-tile').dataset.broken=''" />
+              <figcaption class="g-cap g-cap-over">
+                <span class="g-title">{it.title}</span>
+                <span class="g-cat">{indLabel[it.ind]} · {medLabel[it.type]}</span>
+              </figcaption>
+            </div>
+            <div class="g-cap g-cap-below" aria-hidden="true">
+              <span class="g-title">{it.title}</span>
+              <span class="g-cat">{indLabel[it.ind]} · {medLabel[it.type]}</span>
+            </div>
+          </figure>
+        ))}
+      </div>
+    )}
   </section>
 
   <!-- ═══════════ LIGHTBOX ═══════════ -->
@@ -243,7 +279,9 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   apply();
 
   // A tile that fails to load drops out of the grid and the lightbox.
-  new MutationObserver(apply).observe(document.querySelector('[data-masonry]')!, { subtree: true, attributes: true, attributeFilter: ['data-broken'] });
+  document.querySelectorAll('[data-masonry]').forEach(root => {
+    new MutationObserver(apply).observe(root, { subtree: true, attributes: true, attributeFilter: ['data-broken'] });
+  });
 
   /* ── Video tiles: muted preview on hover (mouse only) ───────────── */
   tiles.filter(t => t.dataset.type === 'video').forEach(t => {
@@ -485,17 +523,11 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   .g-tile:not(.no-expand) { cursor: zoom-in; }
   .g-tile:focus-visible { outline: none; }
   .g-tile:focus-visible .g-media { outline: 2px solid #ff9317; outline-offset: 3px; }
-  /* Wide tiles break out of the multicol flow and span every column, so
-     ultra-wide panoramic group shots read at full width instead of being
-     crushed into a single narrow column. */
-  .g-tile.is-wide {
-    column-span: all;
-    -webkit-column-span: all;
-    width: 100%;
-    /* Keep the same margin as every other tile so vertical rhythm
-       stays uniform across the whole gallery. */
-    margin-top: 0;
-  }
+  /* Wide tiles live in their own flex-column container below the main
+     masonry so multicol balancing can't leave an empty gap trying to
+     wrap around them. */
+  .w-wide-list { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+  .g-tile.is-wide { width: 100%; margin: 0; }
 
   .g-media {
     position: relative; overflow: hidden; border-radius: 14px;
