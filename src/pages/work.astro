@@ -644,7 +644,9 @@ const wideItems   = items.filter(it =>  it.wide);
   }
   .w-lb-media.is-in { animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both; }
   @keyframes wlbZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
-  .w-lb-media img, .w-lb-media video {
+  /* :global() required — the <img>/<video> inside is created in JS at
+     runtime, so Astro's scoped-class attribute isn't on it. */
+  .w-lb-media :global(img), .w-lb-media :global(video) {
     display: block;
     width: 100%; height: 100%;
     object-fit: contain;
@@ -652,7 +654,7 @@ const wideItems   = items.filter(it =>  it.wide);
     pointer-events: none;
     background: #000;
   }
-  .w-lb-media video { pointer-events: auto; }
+  .w-lb-media :global(video) { pointer-events: auto; }
   .w-lb-info {
     display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;
     width: min(100% - 64px, 1100px); margin: 0 auto; padding: 8px 0 32px;
@@ -689,7 +691,7 @@ const wideItems   = items.filter(it =>  it.wide);
 
     .w-lb-top { padding: 16px 16px 0 22px; }
     .w-lb-stage { padding: 12px 0; }
-    .w-lb-media img, .w-lb-media video { max-width: 100vw; max-height: calc(100vh - 300px); border-radius: 0; }
+    .w-lb-media :global(img), .w-lb-media :global(video) { border-radius: 0; }
     .w-lb-info { flex-direction: column; align-items: stretch; gap: 16px; width: auto; margin: 0; padding: 8px 22px 28px; }
     .w-lb-title { font-size: 22px; }
     .w-lb-desc { font-size: 14px; }
