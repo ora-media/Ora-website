@@ -6,8 +6,11 @@ const stats = [
   { label: 'Shoots', value: '+400' },
   { label: 'Campaigns', value: '+250' },
 ];
-const topLogos = ['Emirates Red Crescent', 'Sharjah Gov', 'Sharjah Co-op', 'Abu Dhabi TV', 'AIS Sharjah', 'GITEX Global'];
-const bottomLogos = ['Kana', 'Mahrosah', 'Yah Oud', 'Low Calories', 'Masar', 'Derma One', 'Bab Alkhozam'];
+// Client logos — PNGs in /public/images/clients/. Split across two
+// marquee rows so each row has a different mix drifting in opposite
+// directions.
+const topLogos = ['001.png', '002.png', '003.png', '004.png', '005.png', '006.png', '007.png', '008.png', '009.png', '10.png', '11.png'];
+const bottomLogos = ['12.png', '13.png', '14.png', '15.png', '16.png', '17.png', '18.png', '19.png', '20.png', '21.png', 'ais.png'];
 ---
 <section class="stats-section">
   <div class="container">
@@ -22,8 +25,8 @@ const bottomLogos = ['Kana', 'Mahrosah', 'Yah Oud', 'Low Calories', 'Masar', 'De
   </div>
 
   <div class="logos" aria-label="Clients">
-    <div class="logo-row"><div class="logo-track logo-track-l">{[...topLogos, ...topLogos].map(l => <span class="logo-slot">{l}</span>)}</div></div>
-    <div class="logo-row"><div class="logo-track logo-track-r">{[...bottomLogos, ...bottomLogos].map(l => <span class="logo-slot">{l}</span>)}</div></div>
+    <div class="logo-row"><div class="logo-track logo-track-l">{[...topLogos, ...topLogos].map(l => <span class="logo-slot"><img src={`/images/clients/${l}`} alt="" loading="lazy" decoding="async" /></span>)}</div></div>
+    <div class="logo-row"><div class="logo-track logo-track-r">{[...bottomLogos, ...bottomLogos].map(l => <span class="logo-slot"><img src={`/images/clients/${l}`} alt="" loading="lazy" decoding="async" /></span>)}</div></div>
   </div>
 </section>
 
@@ -59,7 +62,9 @@ const bottomLogos = ['Kana', 'Mahrosah', 'Yah Oud', 'Low Calories', 'Masar', 'De
   .logo-track { display: flex; width: max-content; }
   .logo-track-l { animation: marqueeL 42s linear infinite; }
   .logo-track-r { animation: marqueeR 42s linear infinite; }
-  .logo-slot { flex: none; padding: 0 44px; font-weight: 600; font-size: 15px; line-height: 44px; letter-spacing: .3px; color: #cfc7be; opacity: .8; white-space: nowrap; }
+  .logo-slot { flex: none; display: inline-flex; align-items: center; justify-content: center; padding: 0 36px; height: 60px; }
+  .logo-slot img { display: block; height: 60px; width: auto; max-width: 160px; object-fit: contain; opacity: .85; filter: brightness(1.05); transition: opacity .2s ease, filter .2s ease; }
+  .logo-slot:hover img { opacity: 1; filter: brightness(1.15); }
 
   @media (max-width: 1199px) { .stat-num { font-size: 70px; } }
   @media (max-width: 899px) {
@@ -90,7 +95,8 @@ const bottomLogos = ['Kana', 'Mahrosah', 'Yah Oud', 'Low Calories', 'Masar', 'De
     .logos { gap: 8px; margin-top: 44px; }
     .logo-row { padding: 10px 0; -webkit-mask-image: none; mask-image: none; background: rgba(255,255,255,.04); }
     .logo-track-l, .logo-track-r { animation-duration: 36s; }
-    .logo-slot { padding: 0 24px; font-size: 13px; line-height: 36px; }
+    .logo-slot { padding: 0 20px; height: 44px; }
+    .logo-slot img { height: 44px; max-width: 120px; }
   }
 </style>
 

@@ -77,7 +77,7 @@ const groups: Item[][] = [
   social.flatMap(c => range(16).map(n => ({ src: `/images/work/social/${c.id}/${n}.jpg`, type: 'social' as const, ind: 'food-beverage', title: c.title, desc: c.desc }))),
   photoSet('hospitality/', [11, 7], 'hospitality'),
   photoSet('products/', [11, 11, 11], 'products'),
-  photoSet('schools/', [11, 9, 3], 'schools', ['Graduation', 'Graduation', 'Graduation'], true),
+  photoSet('schools/', [11, 9, 3, 3], 'schools', ['Graduation', 'Graduation', 'Graduation', 'Graduation'], true),
 ];
 const items: Item[] = [];
 for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if (i < g.length) items.push(g[i]);
