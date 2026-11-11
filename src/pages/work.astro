@@ -307,23 +307,46 @@ const wideItems   = items.filter(it =>  it.wide);
   let lastFocus: HTMLElement | null = null;
 
   const pad = (n: number) => String(n).padStart(2, '0');
+  // Fit a (w×h) box inside the available viewport, capped to 1280 wide
+   // and (viewport - 220) tall. Never upscales past natural size.
+   const fit = (w: number, h: number) => {
+     const maxW = Math.min(window.innerWidth - 64, 1280);
+     const maxH = Math.max(240, window.innerHeight - 220);
+     const scale = Math.min(maxW / w, maxH / h, 1);
+     mediaEl.style.width  = `${Math.round(w * scale)}px`;
+     mediaEl.style.height = `${Math.round(h * scale)}px`;
+   };
+   let onResize: (() => void) | null = null;
+   const unbindResize = () => { if (onResize) { window.removeEventListener('resize', onResize); onResize = null; } };
+
   const render = () => {
     const t = list[idx]; if (!t) return;
     const src = t.dataset.src!;
     mediaEl.innerHTML = '';
-    // Use the known aspect-ratio (from the manifest) to shape the
-    // wrapper up-front so the video doesn't flash at browser default
-    // 300×150 before metadata loads.
-    mediaEl.style.aspectRatio = t.dataset.aspect || '';
+    mediaEl.style.cssText = '';
+    unbindResize();
+    // Parse aspect ("1920 / 1080") if we already know it (from manifest);
+    // otherwise we'll measure once the media's natural size arrives.
+    let w = 0, h = 0;
+    if (t.dataset.aspect) {
+      const [aw, ah] = t.dataset.aspect.split('/').map(s => parseFloat(s.trim()));
+      if (aw > 0 && ah > 0) { w = aw; h = ah; fit(w, h); }
+    }
     if (t.dataset.type === 'video') {
       const v = document.createElement('video');
       Object.assign(v, { src, controls: true, autoplay: true, loop: true, playsInline: true });
+      v.addEventListener('loadedmetadata', () => { if (v.videoWidth && v.videoHeight) { w = v.videoWidth; h = v.videoHeight; fit(w, h); } }, { once: true });
       mediaEl.appendChild(v);
     } else {
       const img = document.createElement('img');
       img.src = src; img.alt = t.dataset.title || ''; img.draggable = false;
+      const onLoad = () => { if (img.naturalWidth && img.naturalHeight) { w = img.naturalWidth; h = img.naturalHeight; fit(w, h); } };
+      if (img.complete && img.naturalWidth) onLoad(); else img.addEventListener('load', onLoad, { once: true });
       mediaEl.appendChild(img);
     }
+    // Re-fit on viewport resize so aspect stays correct.
+    onResize = () => { if (w && h) fit(w, h); };
+    window.addEventListener('resize', onResize);
     mediaEl.classList.remove('is-in'); void mediaEl.offsetWidth; mediaEl.classList.add('is-in');
     posEl.textContent = `${pad(idx + 1)} / ${pad(list.length)}`;
     catEl.textContent = t.dataset.cat || '';
@@ -344,6 +367,8 @@ const wideItems   = items.filter(it =>  it.wide);
   };
   const close = () => {
     lb.hidden = true; mediaEl.innerHTML = '';
+    mediaEl.style.cssText = '';
+    unbindResize();
     document.body.style.overflow = '';
     lastFocus?.focus();
   };
@@ -611,13 +636,10 @@ const wideItems   = items.filter(it =>  it.wide);
     touch-action: pan-y; cursor: grab; overflow: hidden;
   }
   .w-lb-stage:active { cursor: grabbing; }
-  /* Wrapper takes the known aspect-ratio (set inline in JS from the
-     manifest). Browser sizes it against both max-width and max-height
-     so portrait and landscape both fit inside the stage correctly. */
+  /* Wrapper is sized explicitly in JS (see render()) so the media
+     inside always fills a box of the correct aspect. */
   .w-lb-media {
-    display: block; line-height: 0;
-    max-width: min(100%, 1280px);
-    max-height: calc(100vh - 220px);
+    display: block; line-height: 0; margin: 0 auto;
     transition: transform .35s cubic-bezier(.2,.7,.2,1);
   }
   .w-lb-media.is-in { animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both; }
@@ -629,14 +651,6 @@ const wideItems   = items.filter(it =>  it.wide);
     border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,.7);
     pointer-events: none;
     background: #000;
-  }
-  /* No preset aspect (images): let intrinsic size drive within max caps */
-  .w-lb-media:not([style*="aspect-ratio"]) img,
-  .w-lb-media:not([style*="aspect-ratio"]) video {
-    width: auto; height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    margin: 0 auto;
   }
   .w-lb-media video { pointer-events: auto; }
   .w-lb-info {
