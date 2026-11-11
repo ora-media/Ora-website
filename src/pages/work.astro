@@ -12,7 +12,7 @@ type Medium = 'photo' | 'video' | 'social';
 type Item = {
   src: string; type: Medium; ind: string; title: string;
   desc?: string; noExpand?: boolean;
-  poster?: string; aspect?: string;
+  poster?: string; aspect?: string; wide?: boolean;
 };
 
 const industries = [
@@ -35,10 +35,11 @@ const media = [
 const medLabel: Record<Medium, string> = { photo: 'Photography', video: 'Videography', social: 'Social Media' };
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
-const photoSet = (dir: string, slots: number[], ind: string, titles?: string[], noExpand = false): Item[] =>
+const photoSet = (dir: string, slots: number[], ind: string, titles?: string[], noExpand = false, wideSlides: number[] = []): Item[] =>
   slots.flatMap((count, s) => range(count).map(k => ({
     src: `/images/work/photography/${dir}slide${s + 1}/${k}.jpg`, type: 'photo' as const, ind,
     title: titles?.[s] ?? indLabel[ind], noExpand,
+    wide: wideSlides.includes(s + 1),
   })));
 
 const social = [
@@ -77,7 +78,7 @@ const groups: Item[][] = [
   social.flatMap(c => range(16).map(n => ({ src: `/images/work/social/${c.id}/${n}.jpg`, type: 'social' as const, ind: 'food-beverage', title: c.title, desc: c.desc }))),
   photoSet('hospitality/', [11, 7], 'hospitality'),
   photoSet('products/', [11, 11, 11], 'products'),
-  photoSet('schools/', [11, 9, 3, 3], 'schools', ['Graduation', 'Graduation', 'Graduation', 'Graduation'], true),
+  photoSet('schools/', [11, 9, 3, 3], 'schools', ['Graduation', 'Graduation', 'Graduation', 'Graduation'], true, [3]),
 ];
 const items: Item[] = [];
 for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if (i < g.length) items.push(g[i]);
@@ -122,7 +123,7 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     <div class="w-masonry" data-masonry>
       {items.map((it, i) => (
         <figure
-          class={`g-tile ${it.noExpand ? 'no-expand' : ''}`}
+          class={`g-tile ${it.noExpand ? 'no-expand' : ''} ${it.wide ? 'is-wide' : ''}`}
           data-type={it.type}
           data-ind={it.ind}
           data-title={it.title}
@@ -268,7 +269,9 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
     if (t.dataset.type === 'video') {
       const v = document.createElement('video');
       Object.assign(v, { src, controls: true, autoplay: true, loop: true, playsInline: true });
-      if (t.dataset.aspect) v.style.aspectRatio = t.dataset.aspect;
+      // Browser sizes <video> from its natural width/height once metadata
+      // loads; no need to force an aspect-ratio that could conflict with
+      // the max-height cap and stretch portrait clips sideways.
       mediaEl.appendChild(v);
     } else {
       const img = document.createElement('img');
@@ -475,6 +478,15 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   .g-tile:not(.no-expand) { cursor: zoom-in; }
   .g-tile:focus-visible { outline: none; }
   .g-tile:focus-visible .g-media { outline: 2px solid #ff9317; outline-offset: 3px; }
+  /* Wide tiles break out of the multicol flow and span every column, so
+     ultra-wide panoramic group shots read at full width instead of being
+     crushed into a single narrow column. */
+  .g-tile.is-wide {
+    column-span: all;
+    -webkit-column-span: all;
+    width: 100%;
+    margin-bottom: 20px;
+  }
 
   .g-media {
     position: relative; overflow: hidden; border-radius: 14px;
@@ -550,16 +562,28 @@ for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if 
   @keyframes wlbFade { from { opacity: 0; } to { opacity: 1; } }
   .w-lb-top { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0 32px; }
   .w-lb-pos { font-family: 'Madani', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 1px; color: #c3bbb2; }
-  .w-lb-stage { position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 16px 120px; touch-action: pan-y; cursor: grab; }
+  .w-lb-stage {
+    position: relative; min-height: 0;
+    display: grid; place-items: center;
+    padding: 16px 32px;
+    touch-action: pan-y; cursor: grab; overflow: hidden;
+  }
   .w-lb-stage:active { cursor: grabbing; }
-  .w-lb-media { max-width: 100%; max-height: 100%; display: flex; transition: transform .35s cubic-bezier(.2,.7,.2,1); }
+  .w-lb-media {
+    display: block; line-height: 0;
+    transition: transform .35s cubic-bezier(.2,.7,.2,1);
+  }
   .w-lb-media.is-in { animation: wlbZoom .32s cubic-bezier(.2,.7,.2,1) both; }
   @keyframes wlbZoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
   .w-lb-media img, .w-lb-media video {
-    display: block; max-width: min(100%, 1400px); max-height: calc(100vh - 260px);
-    width: auto; height: auto; object-fit: contain;
+    display: block;
+    max-width: min(calc(100vw - 64px), 1400px);
+    max-height: calc(100vh - 260px);
+    width: auto; height: auto;
+    margin: 0 auto;
     border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,.7);
     pointer-events: none;
+    background: #000;
   }
   .w-lb-media video { pointer-events: auto; }
   .w-lb-info {
