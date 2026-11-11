@@ -89,11 +89,15 @@ const groups: Item[][] = [
 ];
 const items: Item[] = [];
 for (let i = 0; groups.some(g => i < g.length); i++) for (const g of groups) if (i < g.length) items.push(g[i]);
-// Wide items render in a separate flex-column container below the main
-// masonry so the multicol layout doesn't leave a tall gap trying to
-// column-span across them.
-const normalItems = items.filter(it => !it.wide);
-const wideItems   = items.filter(it =>  it.wide);
+// Videos live in the centre-stage rail; the grid holds photos + social only.
+const videoItems  = items.filter(it => it.type === 'video');
+const normalItems = items.filter(it => it.type !== 'video' && !it.wide);
+const wideItems   = items.filter(it => it.type !== 'video' &&  it.wide);
+const isWideVideo = (ar?: string) => {
+  if (!ar) return false;
+  const [w, h] = ar.split('/').map(s => parseFloat(s.trim()));
+  return w > 0 && h > 0 && w > h;
+};
 ---
 <BaseLayout title="Work — Ora Digital Media">
   <div class="work-page-bg" aria-hidden="true"></div>
@@ -129,6 +133,94 @@ const wideItems   = items.filter(it =>  it.wide);
       <span class="w-count" data-count></span>
     </div>
   </div>
+
+  <!-- ═══════════ VIDEO RAIL — 4a (Videography tab) + 5a (All Work) ═══════════ -->
+  {videoItems.length > 0 && (
+    <>
+      <section class="v-section v-4a" data-rail-wrap="4a" hidden>
+        <div class="v-stage">
+          <div class="v-rail" data-rail="4a" tabindex="0">
+            {videoItems.map(v => (
+              <div
+                class="v-card"
+                data-type="video"
+                data-ind={v.ind}
+                data-wide={isWideVideo(v.aspect) ? 'true' : 'false'}
+                data-src={v.src}
+                data-title={v.title}
+                data-cat={`${indLabel[v.ind]} · Videography`}
+                data-desc={v.desc ?? ''}
+                data-aspect={v.aspect}
+                tabindex="0"
+                role="button"
+                aria-label={`Open ${v.title}`}
+              >
+                <video src={`${v.src}#t=0.1`} poster={v.poster} muted loop playsinline preload="metadata"></video>
+                <span class="v-progress" aria-hidden="true"></span>
+              </div>
+            ))}
+          </div>
+          <div class="v-fade v-fade-l" aria-hidden="true"></div>
+          <div class="v-fade v-fade-r" aria-hidden="true"></div>
+        </div>
+        <div class="v-footer">
+          <button type="button" class="v-arrow" data-rail-prev="4a" aria-label="Previous">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="v-info">
+            <p class="v-pos" data-rail-pos="4a"></p>
+            <p class="v-title" data-rail-title="4a"></p>
+          </div>
+          <button type="button" class="v-arrow" data-rail-next="4a" aria-label="Next">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <section class="v-section v-5a" data-rail-wrap="5a" hidden>
+        <div class="v-header">
+          <div class="v-info">
+            <p class="v-pos" data-rail-pos="5a"></p>
+            <p class="v-title" data-rail-title="5a"></p>
+          </div>
+          <div class="v-nav">
+            <button type="button" class="v-arrow" data-rail-prev="5a" aria-label="Previous">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="v-arrow" data-rail-next="5a" aria-label="Next">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="v-stage">
+          <div class="v-rail" data-rail="5a" tabindex="0">
+            {videoItems.map(v => (
+              <div
+                class="v-card"
+                data-type="video"
+                data-ind={v.ind}
+                data-wide={isWideVideo(v.aspect) ? 'true' : 'false'}
+                data-src={v.src}
+                data-title={v.title}
+                data-cat={`${indLabel[v.ind]} · Videography`}
+                data-desc={v.desc ?? ''}
+                data-aspect={v.aspect}
+                tabindex="0"
+                role="button"
+                aria-label={`Open ${v.title}`}
+              >
+                <video src={`${v.src}#t=0.1`} poster={v.poster} muted loop playsinline preload="metadata"></video>
+                <span class="v-progress" aria-hidden="true"></span>
+              </div>
+            ))}
+          </div>
+          <div class="v-fade v-fade-l" aria-hidden="true"></div>
+          <div class="v-fade v-fade-r" aria-hidden="true"></div>
+        </div>
+        <div class="v-divider" aria-hidden="true"></div>
+      </section>
+    </>
+  )}
 
   <!-- ═══════════ MASONRY ═══════════ -->
   <section class="w-gallery container">
@@ -245,38 +337,80 @@ const wideItems   = items.filter(it =>  it.wide);
   const tabs  = Array.from(document.querySelectorAll<HTMLButtonElement>('.w-tab'));
   const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.w-chip'));
   const countEl = document.querySelector<HTMLElement>('[data-count]');
+  const sect4a  = document.querySelector<HTMLElement>('[data-rail-wrap="4a"]');
+  const sect5a  = document.querySelector<HTMLElement>('[data-rail-wrap="5a"]');
+  const gallery = document.querySelector<HTMLElement>('.w-gallery');
+  // Originals only — captured before cloning for the infinite loop.
+  const cards4a = sect4a ? Array.from(sect4a.querySelectorAll<HTMLElement>('.v-card')) : [];
+  const cards5a = sect5a ? Array.from(sect5a.querySelectorAll<HTMLElement>('.v-card')) : [];
+  // Live view that includes clones, used for applying the industry filter.
+  const allRailCards = () => [
+    ...(sect4a ? sect4a.querySelectorAll<HTMLElement>('.v-card') : []),
+    ...(sect5a ? sect5a.querySelectorAll<HTMLElement>('.v-card') : []),
+  ];
   let med = 'all', ind = 'all';
+  type Rail = { reset: () => void; refresh: () => void };
+  let rail4a: Rail | null = null, rail5a: Rail | null = null;
 
   const matches = (t: HTMLElement, m: string, i: string) =>
     !('broken' in t.dataset) && (m === 'all' || t.dataset.type === m) && (i === 'all' || t.dataset.ind === i);
+  const matchesInd = (c: HTMLElement, i: string) => i === 'all' || c.dataset.ind === i;
+  const vidHas = (i: string) => cards4a.some(c => matchesInd(c, i));
+  const tileHas = (m: string, i: string) => tiles.some(t => matches(t, m, i));
 
   const apply = () => {
-    let n = 0;
-    for (const t of tiles) { const ok = matches(t, med, ind); t.hidden = !ok; if (ok) n++; }
+    for (const t of tiles) {
+      // Grid never shows videos now; otherwise match med/ind.
+      const effectiveMed = med === 'video' ? 'video' : (med === 'all' ? 'all' : med);
+      const ok = med !== 'video' && matches(t, effectiveMed, ind);
+      t.hidden = !ok;
+    }
+    for (const c of allRailCards()) c.hidden = !matchesInd(c, ind);
+
+    const visVid = cards4a.filter(c => !c.hidden).length;
+    if (sect4a)  sect4a.hidden  = !(med === 'video' && visVid > 0);
+    if (sect5a)  sect5a.hidden  = !(med === 'all'   && visVid > 0);
+    if (gallery) gallery.hidden = med === 'video';
+
+    const visTiles = tiles.filter(t => !t.hidden).length;
+    const n = med === 'video' ? visVid : med === 'all' ? visTiles + visVid : visTiles;
+    if (countEl) countEl.textContent = `${n} ${n === 1 ? 'piece' : 'pieces'}`;
+
     for (const tab of tabs) {
       const id = tab.dataset.med!;
       const on = id === med;
       tab.classList.toggle('is-active', on);
       tab.setAttribute('aria-selected', String(on));
-      tab.classList.toggle('is-unavailable', !tiles.some(t => matches(t, id, ind)));
+      const has = id === 'video' ? vidHas(ind)
+                : id === 'all'   ? (tileHas('all', ind) || vidHas(ind))
+                                 : tileHas(id, ind);
+      tab.classList.toggle('is-unavailable', !has);
     }
     for (const c of chips) {
       const id = c.dataset.ind!;
       const on = id === ind;
       c.classList.toggle('is-active', on);
       c.setAttribute('aria-pressed', String(on));
-      c.hidden = id !== 'all' && !tiles.some(t => matches(t, med, id));
+      const has = med === 'video' ? (id === 'all' ? cards4a.length > 0 : vidHas(id))
+               : med === 'all'    ? (tileHas('all', id) || vidHas(id))
+                                  : tileHas(med, id);
+      c.hidden = id !== 'all' && !has;
     }
-    if (countEl) countEl.textContent = `${n} ${n === 1 ? 'piece' : 'pieces'}`;
+
+    const activeRail = med === 'video' ? rail4a : med === 'all' ? rail5a : null;
+    if (activeRail) requestAnimationFrame(() => activeRail.reset());
   };
 
   tabs.forEach(tab => tab.addEventListener('click', () => {
-    med = tab.dataset.med!;
-    if (!tiles.some(t => matches(t, med, ind))) ind = 'all';   // e.g. Social Media → only F&B has it
+    const next = tab.dataset.med!;
+    const has = next === 'video' ? vidHas(ind)
+              : next === 'all'   ? (tileHas('all', ind) || vidHas(ind))
+                                 : tileHas(next, ind);
+    med = next;
+    if (!has) ind = 'all';
     apply();
   }));
   chips.forEach(c => c.addEventListener('click', () => { ind = c.dataset.ind!; apply(); }));
-  apply();
 
   // A tile that fails to load drops out of the grid and the lightbox.
   document.querySelectorAll('[data-masonry]').forEach(root => {
@@ -356,8 +490,8 @@ const wideItems   = items.filter(it =>  it.wide);
     // Preload neighbours
     [list[idx + 1], list[idx - 1]].forEach(n => { if (n && n.dataset.type !== 'video') { const i = new Image(); i.src = n.dataset.src!; } });
   };
-  const openAt = (t: HTMLElement) => {
-    list = tiles.filter(x => !x.hidden && !x.classList.contains('no-expand'));
+  const openAt = (t: HTMLElement, customList?: HTMLElement[]) => {
+    list = customList ?? tiles.filter(x => !x.hidden && !x.classList.contains('no-expand'));
     idx = Math.max(0, list.indexOf(t));
     lastFocus = document.activeElement as HTMLElement;
     lb.hidden = false;
@@ -417,6 +551,172 @@ const wideItems   = items.filter(it =>  it.wide);
   };
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
+
+  /* ── Centre-stage rail (shared by 4a + 5a) ──────────────────────── */
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+
+  function initRail(section: HTMLElement): Rail {
+    const rail = section.querySelector<HTMLElement>('[data-rail]')!;
+    const originals = Array.from(rail.querySelectorAll<HTMLElement>('.v-card'));
+    const n = originals.length;
+    const loop = n > 1;
+    // Tag then triple the list so the user can scroll either way without hitting a wall.
+    originals.forEach((c, i) => c.dataset.origIdx = String(i));
+    if (loop) {
+      const copy = () => originals.map(c => {
+        const el = c.cloneNode(true) as HTMLElement;
+        el.dataset.clone = '1';
+        return el;
+      });
+      rail.prepend(...copy());
+      rail.append(...copy());
+    }
+    const cards = Array.from(rail.querySelectorAll<HTMLElement>('.v-card'));
+    const origOf = (c: HTMLElement) => Number(c.dataset.origIdx);
+    const copyOf = (c: HTMLElement) => Math.floor(cards.indexOf(c) / n);
+
+    const posEl = section.querySelector<HTMLElement>('.v-pos');
+    const titleEl = section.querySelector<HTMLElement>('.v-title');
+    const prevBtn = section.querySelector<HTMLButtonElement>('[data-rail-prev]');
+    const nextBtn = section.querySelector<HTMLButtonElement>('[data-rail-next]');
+    const behavior: ScrollBehavior = reduced ? 'auto' : 'smooth';
+    let activeCard: HTMLElement | null = null;
+    let activeOrig = -1;
+    let teleporting = false;
+
+    const vis = () => cards.filter(c => !c.hidden);
+    const centreOf = (c: HTMLElement) => c.offsetLeft + c.offsetWidth / 2 - rail.clientWidth / 2;
+    const scrollTo = (c: HTMLElement, behav: ScrollBehavior = behavior) => rail.scrollTo({ left: centreOf(c), behavior: behav });
+    const nearest = () => {
+      const centre = rail.scrollLeft + rail.clientWidth / 2;
+      const v = vis(); if (!v.length) return null;
+      let best = v[0], bestD = Infinity;
+      for (const c of v) { const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - centre); if (d < bestD) { bestD = d; best = c; } }
+      return best;
+    };
+
+    const setActive = (card: HTMLElement) => {
+      if (card === activeCard) return;
+      const prev = activeCard;
+      activeCard = card;
+      cards.forEach(c => c.classList.toggle('is-active', c === card));
+      const orig = origOf(card);
+      const newV = card.querySelector<HTMLVideoElement>('video');
+      const prevV = prev?.querySelector<HTMLVideoElement>('video') ?? null;
+
+      if (orig !== activeOrig) {
+        activeOrig = orig;
+        cards.forEach(c => {
+          const vv = c.querySelector<HTMLVideoElement>('video');
+          if (!vv) return;
+          if (c === card && !reduced) { vv.muted = true; vv.play().catch(() => {}); }
+          else { vv.pause(); try { vv.currentTime = 0.1; } catch {} const p = c.querySelector<HTMLElement>('.v-progress'); if (p) p.style.width = '0%'; }
+        });
+        const vOrigs = originals.filter(c => !c.hidden);
+        const rank = vOrigs.findIndex(c => origOf(c) === orig);
+        if (posEl)  posEl.textContent  = `${pad2(rank + 1)} / ${pad2(vOrigs.length)}`;
+        if (titleEl) titleEl.textContent = card.dataset.title || '';
+      } else if (prevV && newV && prevV !== newV) {
+        // Same video, different clone (teleport sibling). Preserve playback.
+        const t = prevV.currentTime;
+        prevV.pause();
+        try { newV.currentTime = t; } catch {}
+        if (!reduced) { newV.muted = true; newV.play().catch(() => {}); }
+      }
+
+      // Non-loop rails dim the end arrows; loop never bottoms out.
+      if (!loop) {
+        const v = vis(); const i = v.indexOf(card);
+        if (prevBtn) prevBtn.style.opacity = i === 0 ? '.35' : '';
+        if (nextBtn) nextBtn.style.opacity = i === v.length - 1 ? '.35' : '';
+      }
+
+      // Teleport: if we've entered an outer copy, silently warp to the
+      // equivalent card in the middle copy so there's always more rail
+      // in either direction.
+      if (loop && !teleporting) {
+        const copy = copyOf(card);
+        if (copy !== 1) {
+          const sibling = cards[cards.indexOf(card) + (copy === 0 ? n : -n)];
+          if (sibling && !sibling.hidden) {
+            teleporting = true;
+            const t = newV?.currentTime ?? 0.1;
+            newV?.pause();
+            const sv = sibling.querySelector<HTMLVideoElement>('video');
+            if (sv) { try { sv.currentTime = t; } catch {} if (!reduced) { sv.muted = true; sv.play().catch(() => {}); } }
+            card.classList.remove('is-active');
+            sibling.classList.add('is-active');
+            activeCard = sibling;
+            rail.scrollTo({ left: rail.scrollLeft + (sibling.offsetLeft - card.offsetLeft), behavior: 'auto' });
+            requestAnimationFrame(() => { teleporting = false; });
+          }
+        }
+      }
+    };
+
+    let raf = 0;
+    rail.addEventListener('scroll', () => {
+      if (teleporting || raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; const c = nearest(); if (c) setActive(c); });
+    });
+    window.addEventListener('resize', () => { const c = nearest(); if (c) setActive(c); });
+
+    const stepBy = (dir: number) => {
+      if (!activeCard) return;
+      let i = cards.indexOf(activeCard) + dir;
+      while (i >= 0 && i < cards.length && cards[i].hidden) i += dir;
+      if (i < 0 || i >= cards.length) return;
+      scrollTo(cards[i]);
+    };
+
+    cards.forEach(c => {
+      c.addEventListener('click', () => {
+        if (c.classList.contains('is-active')) openAt(c, originals.filter(o => !o.hidden));
+        else scrollTo(c);
+      });
+      c.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (c as HTMLElement).click(); }
+      });
+      const vv = c.querySelector<HTMLVideoElement>('video');
+      const prog = c.querySelector<HTMLElement>('.v-progress');
+      if (vv && prog) vv.addEventListener('timeupdate', () => {
+        if (vv.duration) prog.style.width = `${(vv.currentTime / vv.duration) * 100}%`;
+      });
+    });
+    prevBtn?.addEventListener('click', () => stepBy(-1));
+    nextBtn?.addEventListener('click', () => stepBy(1));
+    rail.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); stepBy(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); stepBy(1); }
+    });
+
+    new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) cards.forEach(c => c.querySelector<HTMLVideoElement>('video')?.pause());
+      else if (!reduced && activeCard) activeCard.querySelector<HTMLVideoElement>('video')?.play().catch(() => {});
+    }), { threshold: 0.1 }).observe(rail);
+
+    const firstVis = () => {
+      const v = vis(); if (!v.length) return null;
+      return loop ? (v.find(c => copyOf(c) === 1) || v[0]) : v[0];
+    };
+
+    return {
+      reset: () => {
+        const target = firstVis();
+        if (!target) { activeCard = null; activeOrig = -1; return; }
+        teleporting = true;
+        rail.scrollTo({ left: centreOf(target), behavior: 'auto' });
+        activeCard = null; activeOrig = -1;
+        setActive(target);
+        requestAnimationFrame(() => { teleporting = false; });
+      },
+      refresh: () => { const c = nearest(); if (c) setActive(c); },
+    };
+  }
+  if (sect4a) rail4a = initRail(sect4a);
+  if (sect5a) rail5a = initRail(sect5a);
+  apply();
 
   /* ── Hero mute toggle ───────────────────────────────────────────── */
   const heroVideo = document.querySelector<HTMLVideoElement>('[data-hero-video]');
@@ -701,6 +1001,108 @@ const wideItems   = items.filter(it =>  it.wide);
 
   @media (prefers-reduced-motion: reduce) {
     .g-tile { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ── Centre-stage video rail ────────────────────────────────────── */
+  .v-section { position: relative; }
+  .v-section[hidden] { display: none; }
+  .v-4a { --wp: 292px; --wl: 924px; --gap: 24px; --fade: 120px; --pt: 40px; --pb: 28px; }
+  .v-5a { --wp: 236px; --wl: 746px; --gap: 20px; --fade: 120px; --pt: 32px; --pb: 32px; }
+
+  .v-stage { position: relative; }
+  .v-rail {
+    display: flex; align-items: center; gap: var(--gap);
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: var(--pt) calc(50% - var(--wp) / 2) var(--pb);
+    outline: none;
+  }
+  .v-rail::-webkit-scrollbar { display: none; }
+
+  .v-card {
+    flex: none; position: relative;
+    width: var(--wp); aspect-ratio: 9 / 16;
+    scroll-snap-align: center;
+    border-radius: 18px; overflow: hidden;
+    background: #0e0b10; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.08);
+    transform: scale(.86); opacity: .4;
+    transition: transform .5s cubic-bezier(.2,.7,.2,1), opacity .4s, border-color .4s, box-shadow .4s;
+  }
+  .v-card[data-wide="true"] { width: var(--wl); aspect-ratio: 16 / 9; }
+  .v-card video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .v-card.is-active {
+    transform: scale(1); opacity: 1;
+    border-color: rgba(255,147,23,.45);
+    box-shadow: none;
+  }
+  .v-card:focus-visible { outline: 2px solid #ff9317; outline-offset: 3px; }
+  .v-progress {
+    position: absolute; left: 0; bottom: 0; height: 3px; width: 0;
+    background: #ff9317; pointer-events: none;
+    opacity: 0; transition: opacity .3s;
+  }
+  .v-card.is-active .v-progress { opacity: 1; }
+
+  .v-fade { display: none; }
+
+  .v-arrow {
+    flex: none; width: 48px; height: 48px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.15);
+    color: #fff; cursor: pointer;
+    transition: background .2s, border-color .2s, opacity .2s;
+  }
+  .v-arrow:hover { background: rgba(255,255,255,.14); border-color: rgba(255,147,23,.55); }
+  .v-arrow:focus-visible { outline: 2px solid #ff9317; outline-offset: 3px; }
+
+  .v-info { font-family: 'Madani', sans-serif; }
+  .v-pos { margin: 0 0 8px; font-weight: 600; font-size: 12px; line-height: 1; letter-spacing: 1.4px; color: #ff9317; }
+  .v-title { margin: 0; font-weight: 800; color: #fff; }
+
+  /* 4a footer */
+  .v-4a .v-footer {
+    display: flex; align-items: center; justify-content: center;
+    gap: 32px; padding: 0 80px 96px;
+  }
+  .v-4a .v-footer .v-info { width: 420px; text-align: center; }
+  .v-4a .v-title { font-size: 26px; line-height: 1.15; }
+
+  /* 5a header + divider */
+  .v-5a .v-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 40px 80px 0;
+  }
+  .v-5a .v-nav { display: flex; gap: 10px; }
+  .v-5a .v-title { font-size: 26px; line-height: 1.15; }
+  .v-5a .v-divider {
+    height: 1px; background: rgba(255,255,255,.08);
+    margin: 24px 80px 40px;
+  }
+  /* When 5a rail shows above the grid, kill grid's top padding. */
+  .v-5a:not([hidden]) + .w-gallery { padding-top: 0; }
+
+  @media (max-width: 800px) {
+    .v-4a { --wp: 240px; --wl: 334px; --gap: 12px; --fade: 24px; --pt: 40px; --pb: 28px; }
+    .v-5a { --wp: 200px; --wl: 334px; --gap: 10px; --fade: 20px; --pt: 28px; --pb: 28px; }
+    .v-4a .v-footer { display: block; text-align: center; padding: 0 20px 56px; }
+    .v-4a .v-footer .v-arrow { display: none; }
+    .v-4a .v-footer .v-info { width: auto; }
+    .v-4a .v-title { font-size: 20px; line-height: 1.2; }
+    /* 5a on mobile: no divider, no arrows; show position+title centred below the rail. */
+    .v-5a { display: flex; flex-direction: column; }
+    .v-5a .v-stage { order: 1; }
+    .v-5a .v-header { order: 2; flex-direction: column; align-items: center; padding: 0 20px 28px; }
+    .v-5a .v-header .v-info { text-align: center; }
+    .v-5a .v-nav { display: none; }
+    .v-5a .v-divider { display: none; }
+    .v-5a .v-title { font-size: 18px; line-height: 1.2; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .v-card { transition: none; }
   }
 
   /* Nav sits over the reel on this page */
